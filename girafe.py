@@ -755,7 +755,7 @@ def plot_girafe_simulation(nc_filepath, output_dir):
                     pad=20)
 
             # Save figure
-            output_path = f"{QL_dir}/QL_{var.split('_')[-1]}_time_{ыек(time_index+1).zfill(3)}.png"
+            output_path = f"{QL_dir}/QL_{var.split('_')[-1]}_time_{str(time_index+1).zfill(3)}.png"
             fig.savefig(fname=output_path,
                         format='png',
                         bbox_inches='tight')
