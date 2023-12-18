@@ -1,6 +1,6 @@
 # GIRAFE
 
-GIRAFE - eGIonal ReAl time Fire plumEs
+GIRAFE - reGIonal ReAl time Fire plumEs
 
 GIRAFE is a software that provides plume trajectory forecasts. The trajectories are calculated using the Lagrangian transport model FLEXPART and the ECMWF meteorological fields.
 
