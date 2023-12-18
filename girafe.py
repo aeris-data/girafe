@@ -701,13 +701,13 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             ax.stock_img()
 
             # Plot data (contour, scatter points or pixels)
-            # obj = ax.contourf(lon,
-            #                   lat,
-            #                   var_array[time_index,:,:],
-            #                   transform=crs.PlateCarree(),
-            #                   levels=countour_levels,
-            #                   cmap="jet",
-            #                   norm = matplotlib.colors.LogNorm(vmin=val_min,vmax=val_max))
+            obj = ax.contourf(lon,
+                              lat,
+                              var_array[time_index,:,:],
+                              transform=crs.PlateCarree(),
+                              levels=countour_levels,
+                              cmap="jet",
+                              norm = matplotlib.colors.LogNorm(vmin=val_min,vmax=val_max))
             # obj = ax.scatter(x=lon_mesh,
             #                  y=lat_mesh,
             #                  c=conc_i[time_index,:,:],
@@ -717,11 +717,11 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             #                  vmax=val_max,
             #                  transform=crs.PlateCarree(),
             #                  norm=matplotlib.colors.LogNorm())
-            obj = ax.imshow(var_array[time_index,:,:],
-                            cmap="jet",
-                            extent=[min(lon)-0.05, max(lon)+0.05, min(lat)-0.05, max(lat)+0.05],
-                            transform=crs.PlateCarree(),
-                            norm=colors.LogNorm(vmin=val_min,vmax=val_max))
+            # obj = ax.imshow(var_array[time_index,:,:],
+            #                 cmap="jet",
+            #                 extent=[min(lon)-0.05, max(lon)+0.05, min(lat)-0.05, max(lat)+0.05],
+            #                 transform=crs.PlateCarree(),
+            #                 norm=colors.LogNorm(vmin=val_min,vmax=val_max))
 
             # Draw coastlines on the map
             ax.add_feature(cf.COASTLINE, linewidth=0.3)
@@ -733,33 +733,13 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             cb       = fig.colorbar(obj, ticks=cb_ticks, fraction=0.047*im_ratio)
             cb.minorticks_off()
             cb.ax.set_yticklabels(["{:.2e}".format(elem) for elem in cb_ticks], fontsize=15)
-            
-            # Find pretty nice positions for x tickas and y ticks
-            idx = np.round(np.linspace(0, len(lon) - 1, 4)).astype(int)
-            xticks = np.round(lon[idx])
-            idx = np.round(np.linspace(0, len(lat) - 1, 4)).astype(int)
-            yticks = np.round(lat[idx])
-            # Set x ticks
-            ax.set_xticks(xticks,crs=crs.PlateCarree())
-            ax.set_xticks(np.arange(int(min(lon)),int(max(lon))+1,1),minor=True,crs=crs.PlateCarree())
-            ax.xaxis.set_major_formatter(cartopy.mpl.gridliner.LONGITUDE_FORMATTER)
-            # Set y ticks
-            ax.set_yticks(yticks,crs=crs.PlateCarree())
-            ax.set_yticks(np.arange(int(min(lat)),int(max(lat))+1),minor=True,crs=crs.PlateCarree())
-            ax.yaxis.set_major_formatter(cartopy.mpl.gridliner.LATITUDE_FORMATTER)
-            # Nice formatting of ticklabels
-            ax.tick_params(bottom=True, top=True, left=True, right=True, length=10, which="major", labelsize=15)
-            ax.tick_params(bottom=True, top=True, left=True, right=True, length=6, which="minor")
-            
+
             # Grid line
-            gl = ax.gridlines(crs=crs.PlateCarree(),
-                            draw_labels=False,
-                            xlocs = matplotlib.ticker.MultipleLocator(1),
-                            ylocs = matplotlib.ticker.MultipleLocator(1),
-                            linewidth=0.5,
-                            color='gray',
-                            alpha=0.7,
-                            linestyle=(0,(5,10)))
+            gl = ax.gridlines(draw_labels=True, color='gray', alpha=0.7, linestyle='--')
+            gl.top_labels = False
+            gl.right_labels = False
+            gl.xlabel_style = {'size': 15}
+            gl.ylabel_style = {'size': 15}
 
             # Title
             plt.title(f"{datetime.datetime.strftime(arr_datetime[time_index], '%Y-%m-%d %H:%M:%S')}\n\n",
