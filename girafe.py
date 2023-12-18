@@ -293,13 +293,13 @@ def write_outgrid_file(config_xml_filepath: str, working_dir: str) -> None:
     if lon_min>=lon_max:
         LOGGER.error("Minimum longitude for your simulation domain should be less than the maximum longitude, please check your configuration file.")
         sys.exit(1)
-    if (lon_min>=-180.0 and lon_min<180.0 and lon_max>-180.0 and lon_max<=180.0):
-        lon_status = 0
-    elif ((lon_min>=180.0 or lon_max>180.0) and lon_max<=360.0):
-        lon_status = 0
-    else:
-        LOGGER.error("Longitude of the simulation domaine must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
-        sys.exit(1)
+    # if (lon_min>=-180.0 and lon_min<180.0 and lon_max>-180.0 and lon_max<=180.0):
+    #     lon_status = 0
+    # elif ((lon_min>=180.0 or lon_max>180.0) and lon_max<=360.0):
+    #     lon_status = 0
+    # else:
+    #     LOGGER.error("Longitude of the simulation domaine must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
+    #     sys.exit(1)
     if (Nx<=0) or (Ny<=0):
         LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, resolution should be consistent with chosen lat/lon window to avoid zero-size image in X and Y direction, check your configuration file!")
         sys.exit(1)
