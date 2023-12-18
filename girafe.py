@@ -498,13 +498,13 @@ def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
                 zones_lons.append([float(zone.find("lonmin").text),
                                 float(zone.find("lonmax").text)])
                 
-                if (check_if_in_range(-180,180,zones_lons[-1][0]) and check_if_in_range(-180,180,zones_lons[-1][1])) or \
-                    (check_if_in_range(0,360,zones_lons[-1][0]) and check_if_in_range(0,360,zones_lons[-1][1])):
+                if (check_if_in_range(zones_lons[-1][0],-180,180) and check_if_in_range(zones_lons[-1][1],-180,180)) or \
+                    (check_if_in_range(zones_lons[-1][0],0,360) and check_if_in_range(zones_lons[-1][1],0,360)):
                     lon_status = 0
                 else:
                     LOGGER.error("Longitude of the release must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
                     sys.exit(1)
-                if check_if_in_range(-90,90,zones_lats[-1][0]) and check_if_in_range(-90,90,zones_lats[-1][1]):
+                if check_if_in_range(zones_lats[-1][0],-90,90) and check_if_in_range(zones_lats[-1][1],-90,90):
                     lat_status = 0
                 else:
                     LOGGER.error("Latitude of the release must respect the [-90°;+90°] convention, please check your configuration file.")
