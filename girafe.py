@@ -38,28 +38,33 @@ def write_header_in_file(filepath: str) -> None:
         file.write("╚════════════════════════════════════════════════╝\n")
 
 def print_header_in_terminal() -> None:
-    print("╔════════════════════════════════════════════════╗")
-    print("║            WELCOME                             ║")
-    print("║     /)/)           TO                          ║")
-    print("║    ( ..\             THE                       ║")
-    print("║    /'-._)               GIRAFE                 ║")
-    print("║   /#/                      FLEXPART            ║")
-    print("║  /#/  fsc                      SIMULATION      ║")
-    print("╚════════════════════════════════════════════════╝")
+    LOGGER.info("╔════════════════════════════════════════════════╗")
+    LOGGER.info("║            WELCOME                             ║")
+    LOGGER.info("║     /)/)           TO                          ║")
+    LOGGER.info("║    ( ..\             THE                       ║")
+    LOGGER.info("║    /'-._)               GIRAFE                 ║")
+    LOGGER.info("║   /#/                      FLEXPART            ║")
+    LOGGER.info("║  /#/  fsc                      SIMULATION      ║")
+    LOGGER.info("╚════════════════════════════════════════════════╝")
 
 def start_log(shell_option: bool=True, log_filepath: str="") -> logging.Logger:
     log_handlers = []
     if shell_option==True:
         log_handlers.append(logging.StreamHandler())
-        print_header_in_terminal()
     log_handlers.append(logging.FileHandler(log_filepath))
     write_header_in_file(log_filepath)
     logging.basicConfig(format="%(asctime)s   [%(levelname)s]   %(message)s",
-                        datefmt="%m/%d/%Y %H:%M:%S",
+                        datefmt="%d/%m/%Y %H:%M:%S",
                         handlers=log_handlers)
     logger = logging.getLogger('my_log')
     logger.setLevel(logging.DEBUG)
     return logger
+
+def check_if_in_range(value, lim1, lim2):
+    if value>=lim1 and value<=lim2:
+        return True
+    else:
+        return False
 
 def verif_xml_file(xml_filepath: str) -> None:
     LOGGER.info("Checking "+os.path.basename(xml_filepath)+" file")
@@ -100,9 +105,9 @@ def get_simulation_date(xml_file: str) -> dict:
     except:
         LOGGER.error("End date of the simulation is incorrect. Correct pattern : YYYYMMDD")
         sys.exit(1)
-    if (date["dtime"]!=3) and (date["dtime"]!=6):
-        LOGGER.error("ECMWF delta step of the data should be either 3 or 6 hours, check your configuration file!")
-        sys.exit(1)
+    # if (date["dtime"]!=3) and (date["dtime"]!=6):
+    #     LOGGER.error("ECMWF delta step of the data should be either 3 or 6 hours, check your configuration file!")
+    #     sys.exit(1)
     if begin_date > end_date:
         LOGGER.error("Begin date have to be earlier that the end date or be equal to the end date, check your configuration file")
         sys.exit(1)
@@ -275,20 +280,32 @@ def write_outgrid_file(config_xml_filepath: str, working_dir: str) -> None:
     Nx = int((float(xml.find("longitude/max").text) - float(xml.find("longitude/min").text))/float(xml.find("resolution").text))
     Ny = int((float(xml.find("latitude/max").text) - float(xml.find("latitude/min").text))/float(xml.find("resolution").text))
     height_levels = [node.text for node in xml.find("height")]
+    lon_min, lon_max = float(xml.find("longitude/min").text), float(xml.find("longitude/max").text)
+    lat_min, lat_max = float(xml.find("latitude/min").text), float(xml.find("latitude/max").text)
     # ________________________________________________________
     # Check if data is correct
-    # if (float(xml.find("longitude/max").text)>180) or (float(xml.find("longitude/min").text)<-180):
-    #     LOGGER.error("Minimim or maximum longitude are out of possible range (-180 deg ; +180 deg), check your configuration file!")
-    #     sys.exit(1)
-    # if (float(xml.find("latitude/max").text)>90) or (float(xml.find("latitude/min").text)<-90):
-    #     LOGGER.error("Minimim or maximum latitude are out of possible range (-90 deg ; +90 deg), check your configuration file!")
-    #     sys.exit(1)
-    # if (Nx<=0) or (Ny<=0):
-    #     LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, resolution should be consistent with chosen lat/lon window to avoid zero-size image in X and Y direction, check your configuration file!")
-    #     sys.exit(1)
-    # if float(xml.find("resolution").text)<=0:
-    #     LOGGER.error("Spatial resolution should be positive, check your configuration file!")
-    #     sys.exit(1)
+    if lat_min<-90.0 or lat_max>90.0:
+        LOGGER.error("Latitude of the simulation domain is out of valid range [-90;+90], please check your configuration file.")
+        sys.exit(1)
+    if lat_min>=lat_max:
+        LOGGER.error("Minimum latitude for your simulation domain should be less than the maximum latitude, please check your configuration file.")
+        sys.exit(1)
+    if lon_min>=lon_max:
+        LOGGER.error("Minimum longitude for your simulation domain should be less than the maximum longitude, please check your configuration file.")
+        sys.exit(1)
+    if (lon_min>=-180.0 and lon_min<180.0 and lon_max>-180.0 and lon_max<=180.0):
+        lon_status = 0
+    elif ((lon_min>=180.0 or lon_max>180.0) and lon_max<=360.0):
+        lon_status = 0
+    else:
+        LOGGER.error("Longitude of the simulation domaine must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
+        sys.exit(1)
+    if (Nx<=0) or (Ny<=0):
+        LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, resolution should be consistent with chosen lat/lon window to avoid zero-size image in X and Y direction, check your configuration file!")
+        sys.exit(1)
+    if float(xml.find("resolution").text)<=0:
+        LOGGER.error("Spatial resolution should be positive, check your configuration file!")
+        sys.exit(1)
     check_height_levels = [float(elem)<0 for elem in height_levels]
     if np.any(check_height_levels):
         LOGGER.error("Height values can only be positive, check your configuration file!")
@@ -480,13 +497,21 @@ def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
                                 float(zone.find("latmax").text)])
                 zones_lons.append([float(zone.find("lonmin").text),
                                 float(zone.find("lonmax").text)])
-                if (zones_lons[-1][0]<-180) or (zones_lons[-1][1]>180) or (zones_lats[-1][0]<-90) or (zones_lats[-1][1]>90):
-                    LOGGER.error("Latitude and/or longitude is out of possible range (lon=[-180;180],lat=[-90;90]), check your configuration file!")
+                
+                if (check_if_in_range(-180,180,zones_lons[-1][0]) and check_if_in_range(-180,180,zones_lons[-1][1])) or \
+                    (check_if_in_range(0,360,zones_lons[-1][0]) and check_if_in_range(0,360,zones_lons[-1][1])):
+                    lon_status = 0
+                else:
+                    LOGGER.error("Longitude of the release must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
+                    sys.exit(1)
+                if check_if_in_range(-90,90,zones_lats[-1][0]) and check_if_in_range(-90,90,zones_lats[-1][1]):
+                    lat_status = 0
+                else:
+                    LOGGER.error("Latitude of the release must respect the [-90°;+90°] convention, please check your configuration file.")
                     sys.exit(1)
                 if (zones_lons[-1][0]>zones_lons[-1][1]) or (zones_lats[-1][0]>zones_lats[-1][1]):
                     LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, check your configuration file!")
                     sys.exit(1)
-                
                 if float(release.find('altitude_min').text)>float(release.find('altitude_max').text):
                     LOGGER.error("Minimum altitude/height should be inferior or equal to the maximum value, check your configuration file!")
                     sys.exit(1)
@@ -662,11 +687,15 @@ def plot_girafe_simulation(nc_filepath, output_dir):
         arr_units = output_units[var.split("_")[-1]]
         # =============================================================================
         var_array, val_min, val_max = calc_conc_integrated(ds, var, alt)
-        LOGGER.info(f"Integrated concentration are between {val_min} and {val_max}")
+        # LOGGER.info(f"Integrated concentration are between {val_min} and {val_max}")
+        non_empty_lats = np.any(var_array, axis=(0, 2))
+        non_empty_lons = np.any(var_array, axis=(0, 1))
+        min_lat, max_lat = np.where(non_empty_lats)[0][[0, -1]]
+        min_lon, max_lon = np.where(non_empty_lons)[0][[0, -1]]
         countour_levels = np.logspace(math.log10(val_min),math.log10(val_max),Nlevels)
         # =============================================================================
         for time_index in range(len(time)):
-            LOGGER.info(f"Creating figure {time_index+1}/{len(time)}")
+            LOGGER.info(f"Creating figure for {var} - time {time_index+1}/{len(time)}")
             fig = plt.figure(figsize=(11.7,8.3))
             ax  = fig.add_axes(plt.axes(projection=crs.PlateCarree()))
             ax.stock_img()
@@ -697,6 +726,7 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             # Draw coastlines on the map
             ax.add_feature(cf.COASTLINE, linewidth=0.3)
             ax.add_feature(cf.BORDERS, linewidth=0.3)
+            ax.set_extent([lon[min_lon], lon[max_lon], lat[min_lat], lat[max_lat]])
 
             # Create colorbar with a log scale, change log ticklabels to our data values
             cb_ticks = np.logspace(math.log10(val_min),math.log10(val_max),10)
@@ -774,6 +804,8 @@ if __name__=="__main__":
     global LOGGER, LOG_FILEPATH
     LOG_FILEPATH = wdir+"/girafe-simulation.log"
     LOGGER = start_log(args.shell_log, LOG_FILEPATH)
+    if args.shell_log==True:
+        print_header_in_terminal()
 
     status = prepare_working_dir(wdir)
     if status!=0:
@@ -800,18 +832,18 @@ if __name__=="__main__":
 
     status = copy_source_files(wdir)
     if status==1:
-        LOGGER.error("Something went wrong...")
+        LOGGER.error("Something went wrong during source files copy...")
         sys.exit(1)
     
     write_par_mod_file(config_xmlpath,wdir,Nparts)
 
-    # status = compile_flexpart(wdir)
-    # if status!=0:
-    #     LOGGER.error("Something went wrong...")
-    #     sys.exit(1)
+    status = compile_flexpart(wdir)
+    if status!=0:
+        LOGGER.error("Something went wrong during compilation...")
+        sys.exit(1)
     
     LOGGER.info("Launching FLEXPART")
-    # run_bash_command("./FLEXPART", wdir)
+    run_bash_command("./FLEXPART", wdir)
 
     flexpart_output = glob.glob(f"{wdir}/output/*.nc")[0]
     if not os.path.exists(f"{wdir}/quicklooks"):
