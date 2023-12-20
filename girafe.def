@@ -49,6 +49,12 @@ From: ubuntu:20.04
     wget https://www.flexpart.eu/downloads/66
     tar xvf 66
     cd /usr/local/flexpart_v10.4_3d7eebf/src
+    sed -i "s/if(isec1(6).eq.129) then/if((isec1(6).eq.129).and.(k.eq.0)) then/" gridcheck_ecmwf.f90
+    sed -i "s/if(isec1(6).eq.129) then/if((isec1(6).eq.129).and.(k.eq.0)) then/" gridcheck_nests.f90
+    sed -i "s/if(isec1(6).eq.129) oro(i,j)= \&\!\! ECMWF OROGRAPHY/if((isec1(6).eq.129).and.(k.eq.0)) oro(i,j)= \&\!\! ECMWF OROGRAPHY/" readwind_ecmwf.f90
+    sed -i "s/if(isec1(6).eq.129) oro(i,j)= \&\!\! ECMWF OROGRAPHY/if((isec1(6).eq.129).and.(k.eq.0)) oro(i,j)= \&\!\! ECMWF OROGRAPHY/" readwind_ecmwf_mpi.f90
+    sed -i "s/if(isec1(6).eq.129) oro(i,j)= \&\!\! ECMWF OROGRAPHY/if((isec1(6).eq.129).and.(k.eq.0)) oro(i,j)= \&\!\! ECMWF OROGRAPHY/" readwind_emos.f90
+    sed -i "s/if(isec1(6).eq.129) oron(i,j,l)= \&\!\! ECMWF OROGRAPHY/if((isec1(6).eq.129).and.(k.eq.0)) oron(i,j,l)= \&\!\! ECMWF OROGRAPHY/" readwind_nests.f90
     cp /usr/local/makefile ./
     make ncf=yes
 
