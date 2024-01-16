@@ -15,11 +15,11 @@ import math
 import matplotlib.ticker
 import cartopy.crs as crs
 import cartopy.feature as cf
-import cartopy
 import cartopy.mpl
 import cartopy.mpl.gridliner
 import numpy.ma as ma
 from matplotlib import colors
+import pandas as pd
 
 FLEXPART_ROOT   = "/usr/local/flexpart_v10.4_3d7eebf"
 FLEXPART_EXE    = "/usr/local/flexpart_v10.4_3d7eebf/src/FLEXPART"
@@ -430,9 +430,122 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
         file.write(f"  integer,parameter ::  icmv=-9999\n")
         file.write(f"end module par_mod")
 
-def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
+def get_roi_from_config(config_filepath: str):
+    xml  = ET.parse(config_filepath)
+    xml  = xml.getroot().find("girafe/flexpart/outGrid")
+    lon_min, lon_max = float(xml.find("longitude/min").text), float(xml.find("longitude/max").text)
+    lat_min, lat_max = float(xml.find("latitude/min").text), float(xml.find("latitude/max").text)
+    return {"lat_min":lat_min, "lat_max":lat_max, "lon_min":lon_min, "lon_max":lon_max}
+
+def km_to_degree(pixel_center_deg, pixel_size_km):
+    earthPerimeter = 2.0 * 3.14159265 * 6378.0
+    angle_rad = 3.14159265 * pixel_center_deg / 180.0
+    perimeter = earthPerimeter * np.cos(angle_rad)
+    pixel_size_deg = 360.0 * pixel_size_km / perimeter
+    return pixel_size_deg
+
+def modis_pixel_coordinate(lat_value, lon_value, track_value, scan_value):
+    pixel_size_lat = km_to_degree(lat_value, track_value)
+    pixel_size_lon = km_to_degree(lon_value, scan_value)
+    lat_min = lat_value - pixel_size_lat / 2.0
+    lat_max = lat_value + pixel_size_lat / 2.0
+    lon_min = lon_value - pixel_size_lon / 2.0
+    lon_max = lon_value + pixel_size_lon / 2.0
+    return lat_min, lat_max, lon_min, lon_max
+
+def reformat_time(init_string: str, old_format: str, new_format: str):
+    return datetime.datetime.strftime(datetime.datetime.strptime(init_string, old_format), new_format)
+
+def add_time(init_datetime: str, init_format: str, add_string: str, new_format: str):
+    init_datetime_obj = datetime.datetime.strptime(init_datetime, init_format)
+    new_datetime_obj  = init_datetime_obj + datetime.timedelta(days=int(add_string[:2]),
+                                                               hours=int(add_string[2:4]),
+                                                               minutes=int(add_string[4:6]),
+                                                               seconds=int(add_string[6:8]))
+    return datetime.datetime.strftime(new_datetime_obj, new_format)
+
+def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
+    if not os.path.exists(emission_filepath):
+        return -3
+    # ----------------------------------------------------
+    # Prepare RELEASES file
+    # ----------------------------------------------------
+    file = open(working_dir+"/options/RELEASES","w")
+    file.write("***************************************************************************************************************\n")
+    file.write("*                                                                                                             *\n")
+    file.write("*                                                                                                             *\n")
+    file.write("*                                                                                                             *\n")
+    file.write("*   Input file for the Lagrangian particle dispersion model FLEXPART                                          *\n")
+    file.write("*                        Please select your options                                                           *\n")
+    file.write("*                                                                                                             *\n")
+    file.write("*                                                                                                             *\n")
+    file.write("*                                                                                                             *\n")
+    file.write("***************************************************************************************************************\n")
+    file.write("&RELEASES_CTRL\n")
+    file.write(" NSPEC      =           1, ! Total number of species\n")
+    file.write(" SPECNUM_REL=          "+xml.getroot().find("girafe/flexpart/releases/species").text+", ! Species numbers in directory SPECIES\n")
+    file.write(" /\n")
+    # file.close()
+    # --------------------------------------------------------------------------------------------------------
+    # read MODIS fire file and find hot points that are in the simulation window frame, datetime frame
+    # and with confidence values greater than the minimum confidence value
+    # --------------------------------------------------------------------------------------------------------
+    df = pd.read_csv(emission_filepath)
+    release_nodes = xml.getroot().find("girafe/flexpart/releases")
+    fire_confidence = float(release_nodes.find("fire_confidence").text)
+    total_number_parts = 0
+    for release in release_nodes:
+        if release.tag=="release":
+            release_duration = release.find("end_time").text
+            rois = get_roi_from_config(release)
+            filtered_df = pd.DataFrame()
+            for roi in rois:
+                filtered_df = pd.concat([filtered_df, df[(df['latitude'] >= roi["lat_min"]) & 
+                                                        (df['latitude'] <= roi["lat_max"]) & 
+                                                        (df['longitude'] >= roi["lon_min"]) & 
+                                                        (df['longitude'] <= roi["lon_max"]) &
+                                                        (df['confidence'] >= fire_confidence)]]
+                                        )
+            if len(filtered_df)==0:
+                continue
+            rate = 0.1
+            Bmin = min(filtered_df["brightness"])
+            Npart_init = 10000
+            filtered_df["Npart"] = (Npart_init * (1 - rate) / Bmin * filtered_df["brightness"]).values
+            for row in filtered_df.iterrows():
+                start_date = row[1]['acq_date']
+                start_time = row[1]['acq_time']
+                end_date   = add_time(f"{start_date} {start_time}", "%Y-%m-%d %H:%M", release_duration, "%Y%m%d")
+                end_time   = add_time(f"{start_date} {start_time}", "%Y-%m-%d %H:%M", release_duration, "%H%M%S")
+                lat_min, lat_max, lon_min, lon_max = modis_pixel_coordinate(row[1]["latitude"], row[1]["longitude"], row[1]["track"], row[1]["scan"])
+                file.write("&RELEASE\n")
+                file.write(f" IDATE1 = {reformat_time(start_date,'%Y-%m-%d','%Y%m%d')},\n")
+                file.write(f" ITIME1 = {reformat_time(start_time,'%H:%M','%H%M%S')},\n")
+                file.write(f" IDATE2 = {end_date},\n")
+                file.write(f" ITIME2 = {end_time},\n")
+                file.write(f" LON1 = {lon_min:.3f},\n")
+                file.write(f" LON2 = {lon_max:.3f},\n")
+                file.write(f" LAT1 = {lat_min:.3f},\n")
+                file.write(f" LAT2 = {lat_max:.3f},\n")
+                file.write(f" Z1 = {float(release.find('altitude_min').text):.3f},\n")
+                file.write(f" Z2 = {float(release.find('altitude_max').text):.3f},\n")
+                file.write(" ZKIND = 1,\n")
+                mass_string = f" MASS = {1.0:E},\n"
+                file.write(mass_string.replace("e","E"))
+                file.write(f" PARTS = {row[1]['Npart']},\n")
+                file.write(f" COMMENT = \"RELEASE_{row[0]}\",\n")
+                file.write(" /\n")
+                total_number_parts = total_number_parts + row[1]['Npart']
+    file.close()
+    return total_number_parts
+
+def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str) -> int:
+    xml               = ET.parse(config_xml_filepath)
+    emission_filepath = xml.getroot().find("girafe/paths/emissions").text
+    if not os.path.exists(emission_filepath):
+        return -2
     # ----------------------------------------------------
     # Prepare RELEASES file
     # ----------------------------------------------------
@@ -560,6 +673,16 @@ def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
                             total_number_parts = total_number_parts + 10000
     file.close()
     return total_number_parts
+
+def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
+    xml               = ET.parse(config_xml_filepath)
+    emission_filepath = xml.getroot().find("girafe/paths/emissions").text
+    if ("MCD14DL" in emission_filepath) or ("fire" in emission_filepath):
+        return write_releases_file_for_modis(config_xml_filepath, working_dir)
+    elif ".nc" in emission_filepath:
+        return write_releases_file_for_inventory(config_xml_filepath, working_dir)
+    else:
+        return -1
 
 def compile_flexpart(working_dir: str) -> None:
     # Compile FLEXPART
@@ -809,6 +932,21 @@ if __name__=="__main__":
     write_outgrid_file(config_xmlpath,wdir)
     write_receptors_file(config_xmlpath,wdir)
     Nparts = write_releases_file(config_xmlpath,wdir)
+    match Nparts:
+        case -1:
+            LOGGER.error("Error in the emissions filepath. Only MODIS MCD14DL txt files or netCDF CAMS inventories are accepted.")
+            sys.exit(1)
+        case -2:
+            LOGGER.error("CAMS inventory does not exist, check the filepath in your configuration file.")
+            sys.exit(1)
+        case -3:
+            LOGGER.error("MODIS fire inventory does not exist, check the filepath in your configuration file.")
+            sys.exit(1)
+        case 0:
+            LOGGER.error("No release sources were found, exiting the simulation.")
+            sys.exit(1)
+        case _:
+            pass
 
     status = copy_source_files(wdir)
     if status==1:
