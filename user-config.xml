@@ -135,6 +135,8 @@
                 <!-- (14) I2-131, (15) I-131, (16) Cs-137, (17) Y-91, (18) Ru-106, (19) Kr-85, (20) Sr-90, (21) Xe-133 -->
                 <!-- (22) CO, (23) SO2, (24) AIRTRACER, (25) AERO-TRACE, (26) CH4, (27) C2H6, (31) PCB28, (34) G-HCH, (40) BC -->
                 <species> 22 </species>
+                <!-- Minimum fire confidence if fire inventory is used -->
+                <fire_confidence>85</fire_confidence>
                 <!-- Dates and times of releases -->
                 <!-- (for each different time and date of release you have to add a new <release> node with : 
                     name, start_date, start_time, end_time, altitude min&max, zones where to search for emissions (zones can be different for different releases) -->
@@ -142,20 +144,21 @@
                     <!-- Start date of the release YYYYMMDD-->
                     <start_date>20230501</start_date>
                     <!-- Start time of the emission DDHHMMSS from the above start_date -->
-                    <start_time>00000010</start_time>
+                    <start_time>00000000</start_time>
                     <!-- End time of the emission DDHHMMSS from the above start_date-->
-                    <end_time>01000000</end_time>
+                    <end_time>00120000</end_time>
                     <!-- Minimum altitude of the emission -->
                     <altitude_min>10</altitude_min>
                     <!-- Maximum altitude of the emission -->
                     <altitude_max>15</altitude_max>
-                    <!-- Zones where to search for releases part (CAMS grid is 0.1x0.1 deg so it is very simple to explose the number of releases points if lat/lon of zones are very big -->
+                    <!-- Zones where to search for releases part (CAMS grid is 0.1x0.1 deg so it is very simple to explose the number of releases points if lat/lon of zones are very big) -->
+                    <!-- For MODIS fire detection it os preferable to take bigger zones -->
                     <zones>
                         <zone name="Rome">
-                            <latmin>41.8</latmin>
-                            <latmax>42.0</latmax>
-                            <lonmin>12.2</lonmin>
-                            <lonmax>12.6</lonmax>
+                            <latmin>-18</latmin>
+                            <latmax>-10</latmax>
+                            <lonmin>40</lonmin>
+                            <lonmax>50</lonmax>
                         </zone>
                     </zones>
                 </release>
@@ -189,7 +192,8 @@
             <!-- Docker path to ECMWF data -->
             <ecmwf_dir>/o3p/ECMWF/ENFILES</ecmwf_dir>
             <!-- Docker path to emission data -->
-            <emissions>/o3p/iagos/softio/EMISSIONS/CAMS-GLOB-ANT_Glb_0.1x0.1_anthro_co_v5.3_monthly.nc</emissions>
+            <!-- <emissions>/o3p/iagos/softio/EMISSIONS/CAMS-GLOB-ANT_Glb_0.1x0.1_anthro_co_v5.3_monthly.nc</emissions> -->
+            <emissions>/home/damali/Work/SEDOO/GIRAFE_wdir/modis_fire/MODIS_C6_1_Global_MCD14DL_NRT_2023324.txt</emissions>
         </paths>
     </girafe>
 </config>
