@@ -430,12 +430,14 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
         file.write(f"  integer,parameter ::  icmv=-9999\n")
         file.write(f"end module par_mod")
 
-def get_roi_from_config(config_filepath: str):
-    xml  = ET.parse(config_filepath)
-    xml  = xml.getroot().find("girafe/flexpart/outGrid")
-    lon_min, lon_max = float(xml.find("longitude/min").text), float(xml.find("longitude/max").text)
-    lat_min, lat_max = float(xml.find("latitude/min").text), float(xml.find("latitude/max").text)
-    return {"lat_min":lat_min, "lat_max":lat_max, "lon_min":lon_min, "lon_max":lon_max}
+def get_roi_from_config(node):
+    rois = []
+    zones_nodes = node.find("zones")
+    for zone_node in zones_nodes:
+        lon_min, lon_max = float(zone_node.find("lonmin").text), float(zone_node.find("lonmax").text)
+        lat_min, lat_max = float(zone_node.find("latmin").text), float(zone_node.find("latmax").text)
+        rois.append({"lat_min":lat_min, "lat_max":lat_max, "lon_min":lon_min, "lon_max":lon_max})
+    return rois
 
 def km_to_degree(pixel_center_deg, pixel_size_km):
     earthPerimeter = 2.0 * 3.14159265 * 6378.0
