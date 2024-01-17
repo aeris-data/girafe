@@ -773,6 +773,7 @@ def prepare_working_dir(working_dir: str) -> None:
 
 def run_bash_command(command_string: str, working_dir: str) -> int:
     try:
+        print("try begins")
         result = subprocess.run(
             command_string,
             cwd=working_dir,
@@ -783,17 +784,25 @@ def run_bash_command(command_string: str, working_dir: str) -> int:
             universal_newlines=True
         )
 
+        print("calling for result stdout and std err in try section")
         # Log stdout and stderr
         LOGGER.info(result.stdout.strip())
         LOGGER.error(result.stderr.strip())
-
+        
+        print(f"in try section result.stdout = {result.stdout.strip()}")
+        print(f"in try section result.stderr = {result.stderr.strip()}")
+        
         return result.returncode
 
     except subprocess.CalledProcessError as e:
+        print("i'm in the except section")
         # Log the error and return the return code
         LOGGER.error(f"Command '{e.cmd}' failed with return code {e.returncode}")
         LOGGER.error(f"stdout: {e.stdout.strip()}")
         LOGGER.error(f"stderr: {e.stderr.strip()}")
+        print(f"in except section Command '{e.cmd}' failed with return code {e.returncode}")
+        print(f"in except section stdout: {e.stdout.strip()}")
+        print(f"in except section stderr: {e.stderr.strip()}")
         return e.returncode
 
 
