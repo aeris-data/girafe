@@ -754,21 +754,51 @@ def prepare_working_dir(working_dir: str) -> None:
         LOGGER.error("The working dir ({working_dir}) does not exist...")
         return 1
 
-def run_bash_command(command_string: str, working_dir: str) -> None:
+# def run_bash_command(command_string: str, working_dir: str) -> None:
+#     """
+#     Executes bash commands and logs its output simultaneously
+
+#     Args:
+#         command_string (str): bash command to execute
+#     """
+#     process = subprocess.Popen(command_string, cwd=working_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#     while True:
+#         output = process.stdout.readline()
+#         if process.poll() is not None:
+#             break
+#         if output:
+#             LOGGER.info(output.strip().decode('utf-8'))
+#     return_code = process.poll()
+#     return return_code
+
+def run_bash_command(command_string: str, working_dir: str) -> int:
     """
     Executes bash commands and logs its output simultaneously
 
     Args:
         command_string (str): bash command to execute
     """
-    process = subprocess.Popen(command_string, cwd=working_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(
+        command_string,
+        cwd=working_dir,
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True  # This ensures that output is decoded to strings
+    )
     while True:
         output = process.stdout.readline()
-        if process.poll() is not None:
-            break
         if output:
-            LOGGER.info(output.strip().decode('utf-8'))
-    return_code = process.poll()
+            LOGGER.info(output.strip())
+        else:
+            break
+    while True:
+        err_output = process.stderr.readline()
+        if err_output:
+            LOGGER.error(err_output.strip())
+        else:
+            break
+    return_code = process.wait()
     return return_code
 
 def calc_conc_integrated(nc_dataset: nc.Dataset, var_name: str, altitude_array: np.array):
