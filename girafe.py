@@ -755,56 +755,56 @@ def prepare_working_dir(working_dir: str) -> None:
         LOGGER.error("The working dir ({working_dir}) does not exist...")
         return 1
 
-# def run_bash_command(command_string: str, working_dir: str) -> None:
-#     """
-#     Executes bash commands and logs its output simultaneously
+def run_bash_command(command_string: str, working_dir: str) -> None:
+    """
+    Executes bash commands and logs its output simultaneously
 
-#     Args:
-#         command_string (str): bash command to execute
-#     """
-#     process = subprocess.Popen(command_string, cwd=working_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#     while True:
-#         output = process.stdout.readline()
-#         if process.poll() is not None:
-#             break
-#         if output:
-#             LOGGER.info(output.strip().decode('utf-8'))
-#     return_code = process.poll()
-#     return return_code
+    Args:
+        command_string (str): bash command to execute
+    """
+    process = subprocess.Popen(command_string, cwd=working_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    while True:
+        output = process.stdout.readline()
+        if process.poll() is not None:
+            break
+        if output:
+            LOGGER.info(output.strip().decode('utf-8'))
+    return_code = process.poll()
+    return return_code
 
-def run_bash_command(command_string: str, working_dir: str) -> int:
-    try:
-        # print("----------------> try begins")
-        result = subprocess.run(
-            command_string,
-            cwd=working_dir,
-            shell=True,
-            check=True,  # Raises a CalledProcessError for non-zero return codes
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
+# def run_bash_command(command_string: str, working_dir: str) -> int:
+#     try:
+#         # print("----------------> try begins")
+#         result = subprocess.run(
+#             command_string,
+#             cwd=working_dir,
+#             shell=True,
+#             check=True,  # Raises a CalledProcessError for non-zero return codes
+#             stdout=subprocess.PIPE,
+#             stderr=subprocess.PIPE,
+#             universal_newlines=True
+#         )
 
-        # print("----------------> calling for result stdout and std err in try section")
-        # Log stdout and stderr
-        LOGGER.info(result.stdout.strip())
-        LOGGER.error(result.stderr.strip())
+#         # print("----------------> calling for result stdout and std err in try section")
+#         # Log stdout and stderr
+#         LOGGER.info(result.stdout.strip())
+#         LOGGER.error(result.stderr.strip())
         
-        # print(f"----------------> in try section result.stdout = {result.stdout.strip()}")
-        # print(f"----------------> in try section result.stderr = {result.stderr.strip()}")
+#         # print(f"----------------> in try section result.stdout = {result.stdout.strip()}")
+#         # print(f"----------------> in try section result.stderr = {result.stderr.strip()}")
         
-        return result.returncode
+#         return result.returncode
 
-    except subprocess.CalledProcessError as e:
-        # print("----------------> i'm in the except section")
-        # Log the error and return the return code
-        LOGGER.error(f"Command '{e.cmd}' failed with return code {e.returncode}")
-        LOGGER.error(f"stdout: {e.stdout.strip()}")
-        LOGGER.error(f"stderr: {e.stderr.strip()}")
-        # print(f"----------------> in except section Command '{e.cmd}' failed with return code {e.returncode}")
-        # print(f"----------------> in except section stdout: {e.stdout.strip()}")
-        # print(f"----------------> in except section stderr: {e.stderr.strip()}")
-        return e.returncode
+#     except subprocess.CalledProcessError as e:
+#         # print("----------------> i'm in the except section")
+#         # Log the error and return the return code
+#         LOGGER.error(f"Command '{e.cmd}' failed with return code {e.returncode}")
+#         LOGGER.error(f"stdout: {e.stdout.strip()}")
+#         LOGGER.error(f"stderr: {e.stderr.strip()}")
+#         # print(f"----------------> in except section Command '{e.cmd}' failed with return code {e.returncode}")
+#         # print(f"----------------> in except section stdout: {e.stdout.strip()}")
+#         # print(f"----------------> in except section stderr: {e.stderr.strip()}")
+#         return e.returncode
 
 
 def calc_conc_integrated(nc_dataset: nc.Dataset, var_name: str, altitude_array: np.array):
