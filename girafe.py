@@ -537,7 +537,7 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
                 file.write(" ZKIND = 1,\n")
                 mass_string = f" MASS = {1.0:E},\n"
                 file.write(mass_string.replace("e","E"))
-                file.write(f" PARTS = {row[1]['Npart']},\n")
+                file.write(f" PARTS = {int(row[1]['Npart'])},\n")
                 file.write(f" COMMENT = \"RELEASE_{row[0]}\",\n")
                 file.write(" /\n")
                 total_number_parts = total_number_parts + row[1]['Npart']
