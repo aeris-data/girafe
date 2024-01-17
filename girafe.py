@@ -796,6 +796,7 @@ def run_bash_command(command_string: str, working_dir: str) -> int:
         LOGGER.error(f"stderr: {e.stderr.strip()}")
         return e.returncode
 
+
 def calc_conc_integrated(nc_dataset: nc.Dataset, var_name: str, altitude_array: np.array):
     arr = nc_dataset.variables[var_name][0,0,:,:,:,:]
     conc_i = arr[:,0,:,:]*altitude_array[0]
