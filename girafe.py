@@ -524,7 +524,7 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
                 lat_min, lat_max, lon_min, lon_max = modis_pixel_coordinate(row[1]["latitude"], row[1]["longitude"], row[1]["track"], row[1]["scan"])
                 file.write("&RELEASE\n")
                 file.write(f" IDATE1 = {reformat_time(start_date,'%Y-%m-%d','%Y%m%d')},\n")
-                file.write(f" ITIME1 = {reformat_time(start_time,'%H:%M','%H%M%S')},\n")
+                file.write(f" ITIME1 = {reformat_time(str(start_time),'%H%M','%H%M%S')},\n")
                 file.write(f" IDATE2 = {end_date},\n")
                 file.write(f" ITIME2 = {end_time},\n")
                 file.write(f" LON1 = {lon_min:.3f},\n")
