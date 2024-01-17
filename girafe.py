@@ -376,6 +376,7 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
             keys_values.update({key.upper(): value}) 
         else:
             keys_values.update({key.upper(): xml_keys[key]})
+    print(keys_values)
     with open(f"{working_dir}/flexpart_src/par_mod.f90", "w") as file:
         file.write(f"module par_mod\n")
         file.write(f"  implicit none\n")
