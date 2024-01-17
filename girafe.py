@@ -519,6 +519,7 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
             for row in filtered_df.iterrows():
                 start_date = row[1]['acq_date']
                 start_time = row[1]['acq_time']
+                print(f"{start_date} {start_time}")
                 end_date   = add_time(f"{start_date} {start_time}", "%Y-%m-%d %H:%M", release_duration, "%Y%m%d")
                 end_time   = add_time(f"{start_date} {start_time}", "%Y-%m-%d %H:%M", release_duration, "%H%M%S")
                 lat_min, lat_max, lon_min, lon_max = modis_pixel_coordinate(row[1]["latitude"], row[1]["longitude"], row[1]["track"], row[1]["scan"])
