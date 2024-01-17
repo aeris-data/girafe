@@ -962,7 +962,8 @@ if __name__=="__main__":
         sys.exit(1)
     
     LOGGER.info("Launching FLEXPART")
-    run_bash_command("./FLEXPART", wdir)
+    status = run_bash_command("./FLEXPART", wdir)
+    print(status)
 
     flexpart_output = glob.glob(f"{wdir}/output/*.nc")[0]
     if not os.path.exists(f"{wdir}/quicklooks"):
