@@ -772,34 +772,29 @@ def prepare_working_dir(working_dir: str) -> None:
 #     return return_code
 
 def run_bash_command(command_string: str, working_dir: str) -> int:
-    """
-    Executes bash commands and logs its output simultaneously
+    try:
+        result = subprocess.run(
+            command_string,
+            cwd=working_dir,
+            shell=True,
+            check=True,  # Raises a CalledProcessError for non-zero return codes
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True
+        )
 
-    Args:
-        command_string (str): bash command to execute
-    """
-    process = subprocess.Popen(
-        command_string,
-        cwd=working_dir,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        universal_newlines=True  # This ensures that output is decoded to strings
-    )
-    while True:
-        output = process.stdout.readline()
-        if output:
-            LOGGER.info(output.strip())
-        else:
-            break
-    while True:
-        err_output = process.stderr.readline()
-        if err_output:
-            LOGGER.error(err_output.strip())
-        else:
-            break
-    return_code = process.wait()
-    return return_code
+        # Log stdout and stderr
+        LOGGER.info(result.stdout.strip())
+        LOGGER.error(result.stderr.strip())
+
+        return result.returncode
+
+    except subprocess.CalledProcessError as e:
+        # Log the error and return the return code
+        LOGGER.error(f"Command '{e.cmd}' failed with return code {e.returncode}")
+        LOGGER.error(f"stdout: {e.stdout.strip()}")
+        LOGGER.error(f"stderr: {e.stderr.strip()}")
+        return e.returncode
 
 def calc_conc_integrated(nc_dataset: nc.Dataset, var_name: str, altitude_array: np.array):
     arr = nc_dataset.variables[var_name][0,0,:,:,:,:]
