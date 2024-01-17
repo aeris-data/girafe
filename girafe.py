@@ -932,21 +932,20 @@ if __name__=="__main__":
     write_outgrid_file(config_xmlpath,wdir)
     write_receptors_file(config_xmlpath,wdir)
     Nparts = write_releases_file(config_xmlpath,wdir)
-    match Nparts:
-        case -1:
-            LOGGER.error("Error in the emissions filepath. Only MODIS MCD14DL txt files or netCDF CAMS inventories are accepted.")
-            sys.exit(1)
-        case -2:
-            LOGGER.error("CAMS inventory does not exist, check the filepath in your configuration file.")
-            sys.exit(1)
-        case -3:
-            LOGGER.error("MODIS fire inventory does not exist, check the filepath in your configuration file.")
-            sys.exit(1)
-        case 0:
-            LOGGER.error("No release sources were found, exiting the simulation.")
-            sys.exit(1)
-        case _:
-            pass
+    if Nparts==-1:
+        LOGGER.error("Error in the emissions filepath. Only MODIS MCD14DL txt files or netCDF CAMS inventories are accepted.")
+        sys.exit(1)
+    elif Nparts==-2:
+        LOGGER.error("CAMS inventory does not exist, check the filepath in your configuration file.")
+        sys.exit(1)
+    elif Nparts==-3:
+        LOGGER.error("MODIS fire inventory does not exist, check the filepath in your configuration file.")
+        sys.exit(1)
+    elif Nparts==0:
+        LOGGER.error("No release sources were found, exiting the simulation.")
+        sys.exit(1)
+    else:
+        pass
 
     status = copy_source_files(wdir)
     if status==1:
