@@ -407,7 +407,7 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
         file.write(f"  integer,parameter :: jpack=4*nxmax*nymax, jpunp=4*jpack\n")
         file.write(f"  integer,parameter :: maxageclass=1,nclassunc=1\n")
         file.write(f"  integer,parameter :: maxreceptor=20\n")
-        file.write(f"  integer,parameter :: maxpart={keys_values['maxpart']}\n")
+        file.write(f"  integer,parameter :: maxpart={int(keys_values['maxpart'])+1}\n")
         file.write(f"  integer,parameter :: maxspec=1\n")
         file.write(f"  real,parameter :: minmass=0.0001\n")
         file.write(f"  integer,parameter :: maxwf={keys_values['maxwf']}, maxtable={keys_values['maxtable']}, numclass={keys_values['numclass']}, ni={keys_values['ni']}\n")
