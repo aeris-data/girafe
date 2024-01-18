@@ -43,7 +43,9 @@ bar  foo
 
 You can bind multiple directories in a single command with this syntax:
 
-`$ singularity shell --bind /opt,/data:/mnt my_container.sif`
+```
+$ singularity shell --bind /opt,/data:/mnt my_container.sif
+```
 
 This will bind `/opt` on the host to `/opt` in the container and `/data` on the host to `/mnt` in the container.
 
