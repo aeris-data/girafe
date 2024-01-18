@@ -376,7 +376,6 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
             keys_values.update({key: value}) 
         else:
             keys_values.update({key: xml_keys[key]})
-    print(keys_values)
     with open(f"{working_dir}/flexpart_src/par_mod.f90", "w") as file:
         file.write(f"module par_mod\n")
         file.write(f"  implicit none\n")
@@ -999,9 +998,12 @@ if __name__=="__main__":
     
     LOGGER.info("Launching FLEXPART")
     status = run_bash_command("./FLEXPART", wdir)
-    print(status)
 
-    flexpart_output = glob.glob(f"{wdir}/output/*.nc")[0]
+    try:
+        flexpart_output = glob.glob(f"{wdir}/output/*.nc")[0]
+    except:
+        LOGGER.error("Something went wrong with the simulation, check the FLEXPART output for more information.")
+        sys.exit(1)
     if not os.path.exists(f"{wdir}/quicklooks"):
         os.mkdir(f"{wdir}/quicklooks")
     plot_girafe_simulation(flexpart_output, f"{wdir}/quicklooks")
