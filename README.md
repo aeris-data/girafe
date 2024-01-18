@@ -27,14 +27,15 @@ There are two possible ways to launch the simulation inside the Singularity cont
 - interactive mode
 
 ```
-singularity shell [--bind path1,path2] path/to/girafes.sif
-python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
+$ singularity shell [--bind path1,path2] path/to/girafes.sif
+Singularity>
+Singularity> python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
 ```
 
 - one-line command
 
 ```
-singularity exec [--bind path1,path2] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
+& singularity exec [--bind path1,path2] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
 ```
 
 ### Bind option
