@@ -20,6 +20,7 @@ import cartopy.mpl.gridliner
 import numpy.ma as ma
 from matplotlib import colors
 import pandas as pd
+import xarray as xr
 
 FLEXPART_ROOT   = "/usr/local/flexpart_v10.4_3d7eebf"
 FLEXPART_EXE    = "/usr/local/flexpart_v10.4_3d7eebf/src/FLEXPART"
@@ -691,7 +692,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
     try:
         emission_variable = xml.getroot().find("girafe/paths/emissions_variable").text
     except:
-        LOGGER.error("The node emission_variable is missing in the configuration file; please add the name of the variable to study.")
+        LOGGER.error("The node emissions_variable is missing in the configuration file; please add the name of the variable to study.")
         sys.exit(1)
     if not os.path.exists(emission_filepath):
         return -2
