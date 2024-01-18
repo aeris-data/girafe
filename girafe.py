@@ -718,6 +718,8 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
     # Get time/lat/lon extracts to compute emissions
     # ----------------------------------------------------
     ds = xr.open_dataset(emission_filepath)
+    if ds.dims['time'].duplicated():
+        ds = ds.drop_duplicates(dim="time")
     releases_nodes = xml.getroot().find("girafe/flexpart/releases")
     total_number_parts = 0
     for release_node in releases_nodes:
