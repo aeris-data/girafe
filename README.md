@@ -18,13 +18,15 @@ The main script is `girafe.py` which needs the input configuration file `user-co
 There are two possible ways to launch the simulation inside the Singularity container:
 - interactive mode
 
-`singularity shell [--bind a_path_to_folder_not_owned_by_one's_user] path/to/girafes.sif`
+`singularity shell [--bind path1_not_owned_by_one's_user, path2_not_owned_by_one's_user] path/to/girafes.sif`
 
 `python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
 
 - one-line command
 
-`singularity exec [--bind a_path_to_folder_not_owned_by_one's_user] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
+`singularity exec [--bind path1_not_owned_by_one's_user, path2_not_owned_by_one's_user] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
+
+The `--bind` option grants Singularity container access to folders that are not owned by one's user, or which are mounted paths on a miltu-user server, but that are necessary for the simulation (working or data directories, for example). With the `--bind` option the paths are now recongnized as existing paths and can be used in the simulation. If all of the needed paths are owned by the user
 
 ## Input meteorological data extraction
 The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used.
