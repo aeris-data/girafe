@@ -762,7 +762,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
                     sys.exit(1)
 
                 # Get the subset of the data
-                sub_ds = ds.sel(time=pd.to_datetime(rel_datetime), method="nearest")
+                sub_ds = ds.sel(time=pd.to_datetime(rel_start_datetime), method="nearest")
                 sub_ds = sub_ds.sel(lat=slice(rel_lat_min, rel_lat_max), lon=slice(rel_lon_min, rel_lon_max))
 
                 lon_mesh, lat_mesh = np.meshgrid(sub_ds.lon.values, sub_ds.lat.values)
