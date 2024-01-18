@@ -543,9 +543,156 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
     file.close()
     return total_number_parts
 
+# def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str) -> int:
+#     xml               = ET.parse(config_xml_filepath)
+#     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
+#     try:
+#         emission_variable = xml.getroot().find("girafe/paths/emissions_variable").text
+#     except:
+#         LOGGER.error("The node emission_variable is missing in the configuration file; please add the name of the variable to study.")
+#         sys.exit(1)
+#     if not os.path.exists(emission_filepath):
+#         return -2
+#     # ----------------------------------------------------
+#     # Prepare RELEASES file
+#     # ----------------------------------------------------
+#     file = open(working_dir+"/options/RELEASES","w")
+#     file.write("***************************************************************************************************************\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("*   Input file for the Lagrangian particle dispersion model FLEXPART                                          *\n")
+#     file.write("*                        Please select your options                                                           *\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("*                                                                                                             *\n")
+#     file.write("***************************************************************************************************************\n")
+#     file.write("&RELEASES_CTRL\n")
+#     file.write(" NSPEC      =           1, ! Total number of species\n")
+#     file.write(" SPECNUM_REL=          "+xml.getroot().find("girafe/flexpart/releases/species").text+", ! Species numbers in directory SPECIES\n")
+#     file.write(" /\n")
+#     # ----------------------------------------------------
+#     # for every release node in xml
+#     #  1) get begin/and date/time and find the closest emission time in the netCDF
+#     #  2) for each zone get lat/lon and extract zone window in the netCDF time slice
+#     #  3) compute emissions in kg for each non zero pixel and write it in the RELEASE file
+#     # ----------------------------------------------------
+#     netcdf_days       = nc.Dataset(emission_filepath).variables["time"][:] # netCDF timestamps of the data
+#     time_indices      = []
+#     ref_lat           = nc.Dataset(emission_filepath).variables["lat"][:]
+#     ref_lon           = nc.Dataset(emission_filepath).variables["lon"][:]
+#     release_node      = xml.getroot().find("girafe/flexpart/releases")
+#     emission_days     = [] # list of the emissions reference day
+#     emission_duration = [] # list of the corresponding releases' durations in seconds
+#     iPix = 1
+#     total_number_parts = 0
+#     for release in release_node:
+#         if release.tag=="release":
+#             emission_days.append(release.find("start_date").text)
+#             start_day = datetime.datetime.strptime(release.find("start_date").text,"%Y%m%d")
+#             start_hour = datetime.timedelta(days=int(release.find("start_time").text[:2]),
+#                                             hours=int(release.find("start_time").text[2:4]),
+#                                             minutes=int(release.find("start_time").text[4:6]),
+#                                             seconds=int(release.find("start_time").text[6:]))
+#             end_hour   = datetime.timedelta(days=int(release.find("end_time").text[:2]),
+#                                             hours=int(release.find("end_time").text[2:4]),
+#                                             minutes=int(release.find("end_time").text[4:6]),
+#                                             seconds=int(release.find("end_time").text[6:]))
+#             if (end_hour - start_hour).total_seconds()<=0:
+#                 LOGGER.error("Emissions (releases) durations is zero or negative, check your configuration file for the release start and end time consistency!")
+#                 sys.exit(1)
+#             else:
+#                 emission_duration.append((end_hour - start_hour).seconds)
+
+#             # Find closests netCDF timestamps to user emission dates, and get its indices in list time_indices
+#             julian_day = (datetime.datetime.strptime(emission_days[-1],"%Y%m%d") - datetime.datetime(1850,1,1,0,0,0)).days
+#             time_indices.append(np.argmin(np.abs(netcdf_days - julian_day)))
+
+#             # Get zones of this emission
+#             zones_node = release.find("zones")
+#             zones_names = []; zones_lats = []; zones_lons = [];
+#             for zone in zones_node:
+#                 zones_names.append(zone.attrib["name"])
+#                 zones_lats.append([float(zone.find("latmin").text),
+#                                 float(zone.find("latmax").text)])
+#                 zones_lons.append([float(zone.find("lonmin").text),
+#                                 float(zone.find("lonmax").text)])
+                
+#                 if (check_if_in_range(zones_lons[-1][0],-180,180) and check_if_in_range(zones_lons[-1][1],-180,180)) or \
+#                     (check_if_in_range(zones_lons[-1][0],0,360) and check_if_in_range(zones_lons[-1][1],0,360)):
+#                     lon_status = 0
+#                 else:
+#                     LOGGER.error("Longitude of the release must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
+#                     sys.exit(1)
+#                 if check_if_in_range(zones_lats[-1][0],-90,90) and check_if_in_range(zones_lats[-1][1],-90,90):
+#                     lat_status = 0
+#                 else:
+#                     LOGGER.error("Latitude of the release must respect the [-90°;+90°] convention, please check your configuration file.")
+#                     sys.exit(1)
+#                 if (zones_lons[-1][0]>zones_lons[-1][1]) or (zones_lats[-1][0]>zones_lats[-1][1]):
+#                     LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, check your configuration file!")
+#                     sys.exit(1)
+#                 if float(release.find('altitude_min').text)>float(release.find('altitude_max').text):
+#                     LOGGER.error("Minimum altitude/height should be inferior or equal to the maximum value, check your configuration file!")
+#                     sys.exit(1)
+
+#                 # Find lat/lon in netCDF
+#                 x_mask  = ((ref_lon>=zones_lons[-1][0]) & (ref_lon<=zones_lons[-1][1]))
+#                 y_mask  = ((ref_lat>=zones_lats[-1][0]) & (ref_lat<=zones_lats[-1][1]))
+
+#                 # print(f"Processing emission on date {emission_days[-1]}")
+#                 # print(f" --> Zone {zones_names[-1]}")
+#                 # print(f"  --> Latitude   {zones_lats[-1][0]}, {zones_lats[-1][1]} -> {np.sum(y_mask)} points")
+#                 # print(f"  --> Longitude  {zones_lons[-1][0]}, {zones_lons[-1][1]} -> {np.sum(x_mask)} points")
+
+#                 # Subset of emissions
+#                 try:
+#                     array = nc.Dataset(emission_filepath).variables[emission_variable][time_indices[-1],y_mask,x_mask]
+#                 except:
+#                     LOGGER.error(f"There was a problem with loading {emission_variable} variable, check your confguration file.")
+#                     sys.exit(1)
+#                 lon_mesh, lat_mesh = np.meshgrid(ref_lon[x_mask],ref_lat[y_mask])
+#                 earth_R = 6378.1
+#                 Lref = np.abs(ref_lat[1]-ref_lat[0])*2*np.pi*earth_R/360.0 # spatial resolution of the data converted from degrees to meters on the eqautor
+#                 pixel_surface = (Lref * np.cos(np.radians(lat_mesh))) * Lref # longueur suivant X * longueur suivant Y adapte aux coordonnees du point
+#                 emissions = array * pixel_surface * emission_duration[-1]
+
+#                 # Write release in a file
+#                 # print(f"Writing emission time {time_indices[-1]} - Zone {zones_names[-1]}...")
+#                 # print(f"current_emissions.shape = {emissions.shape}")
+#                 for line in range(emissions.shape[0]):
+#                     for col in range(emissions.shape[1]):
+#                         if emissions[line,col]!=0:
+#                             file.write("&RELEASE\n")
+#                             file.write(f" IDATE1 = {datetime.datetime.strftime(start_day+start_hour,'%Y%m%d')},\n")
+#                             file.write(f" ITIME1 = {datetime.datetime.strftime(start_day+start_hour,'%H%M%S')},\n")
+#                             file.write(f" IDATE2 = {datetime.datetime.strftime(start_day+end_hour,'%Y%m%d')},\n")
+#                             file.write(f" ITIME2 = {datetime.datetime.strftime(start_day+end_hour,'%H%M%S')},\n")
+#                             file.write(f" LON1 = {lon_mesh[line,col]:.3f},\n")
+#                             file.write(f" LON2 = {lon_mesh[line,col]:.3f},\n")
+#                             file.write(f" LAT1 = {lat_mesh[line,col]:.3f},\n")
+#                             file.write(f" LAT2 = {lat_mesh[line,col]:.3f},\n")
+#                             file.write(f" Z1 = {float(release.find('altitude_min').text):.3f},\n")
+#                             file.write(f" Z2 = {float(release.find('altitude_max').text):.3f},\n")
+#                             file.write(" ZKIND = 1,\n")
+#                             mass_string = f" MASS = {emissions[line,col]:E},\n"
+#                             file.write(mass_string.replace("e","E"))
+#                             file.write(" PARTS = 10000,\n")
+#                             file.write(f" COMMENT = \"{zones_names[-1]}_{release.attrib['name']}_{iPix}\",\n")
+#                             file.write(" /\n")
+#                             iPix = iPix + 1
+#                             total_number_parts = total_number_parts + 10000
+#     file.close()
+#     return total_number_parts
+
 def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str) -> int:
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
+    try:
+        emission_variable = xml.getroot().find("girafe/paths/emissions_variable").text
+    except:
+        LOGGER.error("The node emission_variable is missing in the configuration file; please add the name of the variable to study.")
+        sys.exit(1)
     if not os.path.exists(emission_filepath):
         return -2
     # ----------------------------------------------------
@@ -567,111 +714,84 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
     file.write(" SPECNUM_REL=          "+xml.getroot().find("girafe/flexpart/releases/species").text+", ! Species numbers in directory SPECIES\n")
     file.write(" /\n")
     # ----------------------------------------------------
-    # for every release node in xml
-    #  1) get befin/and date/time and find the closest emission time in the netCDF
-    #  2) for each zone get lat/lon and extract zone window in the netCDF time slice
-    #  3) compute emissions in kg for each non zero pixel and write it in the RELEASE file
+    # Get time/lat/lon extracts to compute emissions
     # ----------------------------------------------------
-    netcdf_days       = nc.Dataset(emission_filepath).variables["time"][:] # netCDF timestamps of the data
-    time_indices      = []
-    ref_lat           = nc.Dataset(emission_filepath).variables["lat"][:]
-    ref_lon           = nc.Dataset(emission_filepath).variables["lon"][:]
-    release_node      = xml.getroot().find("girafe/flexpart/releases")
-    emission_days     = [] # list of the emissions reference day
-    emission_duration = [] # list of the corresponding releases' durations in seconds
-    iPix = 1
+    ds = xr.open_dataset(emission_filepath)
+    releases_nodes = xml.getroot().find("girafe/flexpart/releases")
     total_number_parts = 0
-    for release in release_node:
-        if release.tag=="release":
-            emission_days.append(release.find("start_date").text)
-            start_day = datetime.datetime.strptime(release.find("start_date").text,"%Y%m%d")
-            start_hour = datetime.timedelta(days=int(release.find("start_time").text[:2]),
-                                            hours=int(release.find("start_time").text[2:4]),
-                                            minutes=int(release.find("start_time").text[4:6]),
-                                            seconds=int(release.find("start_time").text[6:]))
-            end_hour   = datetime.timedelta(days=int(release.find("end_time").text[:2]),
-                                            hours=int(release.find("end_time").text[2:4]),
-                                            minutes=int(release.find("end_time").text[4:6]),
-                                            seconds=int(release.find("end_time").text[6:]))
-            if (end_hour - start_hour).total_seconds()<=0:
-                LOGGER.error("Emissions (releases) durations is zero or negative, check your configuration file for the release start and end time consistency!")
+    for release_node in releases_nodes:
+        if release_node.tag=="release":
+            rel_day = datetime.datetime.strptime(release_node.find("start_date").text,"%Y%m%d")
+            rel_time = release_node.find("start_time").text
+            rel_time = datetime.timedelta(days=int(rel_time[:2]),
+                                          hours=int(rel_time[2:4]),
+                                          minutes=int(rel_time[4:6]),
+                                          seconds=int(rel_time[6:]))
+            rel_duration = release_node.find("end_time").text
+            rel_duration = datetime.timedelta(days=int(rel_duration[:2]),
+                                              hours=int(rel_duration[2:4]),
+                                              minutes=int(rel_duration[4:6]),
+                                              seconds=int(rel_duration[6:]))
+            rel_start_datetime = rel_day + rel_time
+            rel_end_datetime   = rel_start_datetime + rel_duration
+            if rel_duration.total_seconds()<=0:
+                LOGGER.error("Emissions (releases) durations is zero or negative, check your configuration file.")
                 sys.exit(1)
-            else:
-                emission_duration.append((end_hour - start_hour).seconds)
-
-            # Find closests netCDF timestamps to user emission dates, and get its indices in list time_indices
-            julian_day = (datetime.datetime.strptime(emission_days[-1],"%Y%m%d") - datetime.datetime(1850,1,1,0,0,0)).days
-            time_indices.append(np.argmin(np.abs(netcdf_days - julian_day)))
-
-            # Get zones of this emission
-            zones_node = release.find("zones")
-            zones_names = []; zones_lats = []; zones_lons = [];
+            zones_node = release_node.find("zones")
             for zone in zones_node:
-                zones_names.append(zone.attrib["name"])
-                zones_lats.append([float(zone.find("latmin").text),
-                                float(zone.find("latmax").text)])
-                zones_lons.append([float(zone.find("lonmin").text),
-                                float(zone.find("lonmax").text)])
-                
-                if (check_if_in_range(zones_lons[-1][0],-180,180) and check_if_in_range(zones_lons[-1][1],-180,180)) or \
-                    (check_if_in_range(zones_lons[-1][0],0,360) and check_if_in_range(zones_lons[-1][1],0,360)):
+                # Check if lat/lon are ok and satisfy conditions
+                rel_lat_min, rel_lat_max = float(zone.find("latmin").text), float(zone.find("latmax").text)
+                rel_lon_min, rel_lon_max = float(zone.find("lonmin").text), float(zone.find("lonmax").text)
+                if (check_if_in_range(rel_lon_min,-180,180) and check_if_in_range(rel_lon_max,-180,180)) or \
+                    (check_if_in_range(rel_lon_min,0,360) and check_if_in_range(rel_lon_min,0,360)):
                     lon_status = 0
                 else:
                     LOGGER.error("Longitude of the release must respect either the [-180°;+180°] or [0°;+360°] convention, please check your configuration file.")
                     sys.exit(1)
-                if check_if_in_range(zones_lats[-1][0],-90,90) and check_if_in_range(zones_lats[-1][1],-90,90):
+                if check_if_in_range(rel_lat_min,-90,90) and check_if_in_range(rel_lat_min,-90,90):
                     lat_status = 0
                 else:
                     LOGGER.error("Latitude of the release must respect the [-90°;+90°] convention, please check your configuration file.")
                     sys.exit(1)
-                if (zones_lons[-1][0]>zones_lons[-1][1]) or (zones_lats[-1][0]>zones_lats[-1][1]):
+                if (rel_lon_min>rel_lon_max) or (rel_lat_min>rel_lat_max):
                     LOGGER.error("Minimum latitude and longitude should always be inferior to the maximum values, check your configuration file!")
                     sys.exit(1)
-                if float(release.find('altitude_min').text)>float(release.find('altitude_max').text):
+                if float(release_node.find('altitude_min').text)>float(release_node.find('altitude_max').text):
                     LOGGER.error("Minimum altitude/height should be inferior or equal to the maximum value, check your configuration file!")
                     sys.exit(1)
 
-                # Find lat/lon in netCDF
-                x_mask  = ((ref_lon>=zones_lons[-1][0]) & (ref_lon<=zones_lons[-1][1]))
-                y_mask  = ((ref_lat>=zones_lats[-1][0]) & (ref_lat<=zones_lats[-1][1]))
+                # Get the subset of the data
+                sub_ds = ds.sel(time=pd.to_datetime(rel_datetime), method="nearest")
+                sub_ds = sub_ds.sel(lat=slice(rel_lat_min, rel_lat_max), lon=slice(rel_lon_min, rel_lon_max))
 
-                # print(f"Processing emission on date {emission_days[-1]}")
-                # print(f" --> Zone {zones_names[-1]}")
-                # print(f"  --> Latitude   {zones_lats[-1][0]}, {zones_lats[-1][1]} -> {np.sum(y_mask)} points")
-                # print(f"  --> Longitude  {zones_lons[-1][0]}, {zones_lons[-1][1]} -> {np.sum(x_mask)} points")
-
-                # Subset of emissions
-                array = nc.Dataset(emission_filepath).variables["sum"][time_indices[-1],y_mask,x_mask]
-                lon_mesh, lat_mesh = np.meshgrid(ref_lon[x_mask],ref_lat[y_mask])
+                lon_mesh, lat_mesh = np.meshgrid(sub_ds.lon.values, sub_ds.lat.values)
                 earth_R = 6378.1
-                Lref = np.abs(ref_lat[1]-ref_lat[0])*2*np.pi*earth_R/360.0 # spatial resolution of the data converted from degrees to meters on the eqautor
+                Lref = np.abs(sub_ds.lon[1].values - sub_ds.lon[0].values)*2*np.pi*earth_R/360.0 # spatial resolution of the data converted from degrees to meters on the eqautor
                 pixel_surface = (Lref * np.cos(np.radians(lat_mesh))) * Lref # longueur suivant X * longueur suivant Y adapte aux coordonnees du point
-                emissions = array * pixel_surface * emission_duration[-1]
-
-                # Write release in a file
-                # print(f"Writing emission time {time_indices[-1]} - Zone {zones_names[-1]}...")
-                # print(f"current_emissions.shape = {emissions.shape}")
-                for line in range(emissions.shape[0]):
-                    for col in range(emissions.shape[1]):
+                emissions = sub_ds[emission_variable] * pixel_surface * rel_duration.total_seconds()
+                
+                iPix = 0
+                for line in range(lat_mesh.shape[0]):
+                    for col in range(lat_mesh.shape[1]):
                         if emissions[line,col]!=0:
+                            iPix = iPix + 1
                             file.write("&RELEASE\n")
-                            file.write(f" IDATE1 = {datetime.datetime.strftime(start_day+start_hour,'%Y%m%d')},\n")
-                            file.write(f" ITIME1 = {datetime.datetime.strftime(start_day+start_hour,'%H%M%S')},\n")
-                            file.write(f" IDATE2 = {datetime.datetime.strftime(start_day+end_hour,'%Y%m%d')},\n")
-                            file.write(f" ITIME2 = {datetime.datetime.strftime(start_day+end_hour,'%H%M%S')},\n")
+                            file.write(f" IDATE1 = {datetime.datetime.strftime(rel_start_datetime,'%Y%m%d')},\n")
+                            file.write(f" ITIME1 = {datetime.datetime.strftime(rel_start_datetime,'%H%M%S')},\n")
+                            file.write(f" IDATE2 = {datetime.datetime.strftime(rel_end_datetime,'%Y%m%d')},\n")
+                            file.write(f" ITIME2 = {datetime.datetime.strftime(rel_end_datetime,'%H%M%S')},\n")
                             file.write(f" LON1 = {lon_mesh[line,col]:.3f},\n")
                             file.write(f" LON2 = {lon_mesh[line,col]:.3f},\n")
                             file.write(f" LAT1 = {lat_mesh[line,col]:.3f},\n")
                             file.write(f" LAT2 = {lat_mesh[line,col]:.3f},\n")
-                            file.write(f" Z1 = {float(release.find('altitude_min').text):.3f},\n")
-                            file.write(f" Z2 = {float(release.find('altitude_max').text):.3f},\n")
+                            file.write(f" Z1 = {float(release_node.find('altitude_min').text):.3f},\n")
+                            file.write(f" Z2 = {float(release_node.find('altitude_max').text):.3f},\n")
                             file.write(" ZKIND = 1,\n")
                             mass_string = f" MASS = {emissions[line,col]:E},\n"
                             file.write(mass_string.replace("e","E"))
                             file.write(" PARTS = 10000,\n")
-                            file.write(f" COMMENT = \"{zones_names[-1]}_{release.attrib['name']}_{iPix}\",\n")
+                            file.write(f" COMMENT = \"{release_node.attrib['name']}_{zone.attrib['name']}_{iPix}\",\n")
                             file.write(" /\n")
-                            iPix = iPix + 1
                             total_number_parts = total_number_parts + 10000
     file.close()
     return total_number_parts
@@ -679,9 +799,9 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
 def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
-    if ("MCD14DL" in emission_filepath) or ("fire" in emission_filepath):
+    if ("MCD14DL" in emission_filepath) or ("fire_nrt" in emission_filepath):
         return write_releases_file_for_modis(config_xml_filepath, working_dir)
-    elif ".nc" in emission_filepath:
+    elif (".nc" in emission_filepath) and ("CAMS" in emission_filepath):
         return write_releases_file_for_inventory(config_xml_filepath, working_dir)
     else:
         return -1
