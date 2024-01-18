@@ -18,15 +18,29 @@ The main script is `girafe.py` which needs the input configuration file `user-co
 There are two possible ways to launch the simulation inside the Singularity container:
 - interactive mode
 
-`singularity shell [--bind path1_not_owned_by_one's_user, path2_not_owned_by_one's_user] path/to/girafes.sif`
+`singularity shell [--bind path1,path2] path/to/girafes.sif`
 
 `python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
 
 - one-line command
 
-`singularity exec [--bind path1_not_owned_by_one's_user, path2_not_owned_by_one's_user] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
+`singularity exec [--bind path1,path2] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
 
-The `--bind` option grants Singularity container access to folders that are not owned by one's user, or which are mounted paths on a miltu-user server, but that are necessary for the simulation (working or data directories, for example). With the `--bind` option the paths are now recongnized as existing paths and can be used in the simulation. If all of the needed paths are owned by the user
+The `--bind` option allows to map directories on the host system to directories within the container. When Singularity ‘swaps’ the host operating system for the one inside your container, the host file systems becomes partially inaccessible. The system administrator has the ability to define what bind paths will be included automatically inside each container. Some bind paths are automatically derived (e.g. a user’s home directory) and some are statically defined (e.g. bind paths in the Singularity configuration file). In the default configuration, the directories $HOME , /tmp , /proc , /sys , /dev, and $PWD are among the system-defined bind paths. Thus, in order to read and/or write files on the host system from within the container, one must to bind the necessary directories if they are not automatically included. Here’s an example of using the `--bind` option and binding `/data` on the host to `/mnt` in the container (`/mnt` does not need to already exist in the container):
+
+```
+$ ls /data
+bar  foo
+
+$ singularity exec --bind /data:/mnt my_container.sif ls /mnt
+bar  foo
+```
+
+You can bind multiple directories in a single command with this syntax:
+
+`$ singularity shell --bind /opt,/data:/mnt my_container.sif`
+
+This will bind `/opt` on the host to `/opt` in the container and `/data` on the host to `/mnt` in the container.
 
 ## Input meteorological data extraction
 The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used.
