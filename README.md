@@ -19,6 +19,7 @@ There are two possible ways to launch the simulation inside the Singularity cont
 - interactive mode
 
 `singularity shell [--bind a_path_to_folder_not_owned_by_one's_user] path/to/girafes.sif`
+
 `python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]`
 
 - one-line command
