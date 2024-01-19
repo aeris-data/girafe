@@ -982,6 +982,7 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             fig = plt.figure(figsize=(11.7,8.3))
             ax  = fig.add_axes(plt.axes(projection=crs.PlateCarree()))
             ax.stock_img()
+            ax.set_global()
 
             # Plot data (contour, scatter points or pixels)
             obj = ax.contourf(lon,
@@ -1009,7 +1010,7 @@ def plot_girafe_simulation(nc_filepath, output_dir):
             # Draw coastlines on the map
             ax.add_feature(cf.COASTLINE, linewidth=0.3)
             ax.add_feature(cf.BORDERS, linewidth=0.3)
-            ax.set_extent([lon[min_lon], lon[max_lon], lat[min_lat], lat[max_lat]])
+            # ax.set_extent([lon[min_lon], lon[max_lon], lat[min_lat], lat[max_lat]])
 
             # Create colorbar with a log scale, change log ticklabels to our data values
             cb_ticks = np.logspace(math.log10(val_min),math.log10(val_max),10)
