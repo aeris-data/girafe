@@ -341,13 +341,14 @@ def write_receptors_file(config_xml_filepath: str, working_dir: str) -> None:
     LOGGER.info("Preparing RECEPTORS file for FLEXPART")
     xml  = ET.parse(config_xml_filepath)
     xml  = xml.getroot().find("girafe/flexpart/receptor")
-    with open(working_dir+"/options/RECEPTORS","w") as file:
-        for node in xml:
-            file.write("&RECEPTORS\n")
-            file.write(" RECEPTOR=\""+node.attrib["name"]+"\",\n")
-            file.write(" LON="+node.attrib["longitude"]+",\n")
-            file.write(" LAT="+node.attrib["latitude"]+",\n")
-            file.write(" /\n")
+    if xlm != None:
+        with open(working_dir+"/options/RECEPTORS","w") as file:
+            for node in xml:
+                file.write("&RECEPTORS\n")
+                file.write(" RECEPTOR=\""+node.attrib["name"]+"\",\n")
+                file.write(" LON="+node.attrib["longitude"]+",\n")
+                file.write(" LAT="+node.attrib["latitude"]+",\n")
+                file.write(" /\n")
 
 def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_parts: int) -> None:
     LOGGER.info("Preparing par_mod.f90 file for FLEXPART")
@@ -501,7 +502,8 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
     total_number_parts = 0
     for release in release_nodes:
         if release.tag=="release":
-            release_duration = release.find("end_time").text
+            release_date     = release.find("start_date").text
+            release_duration = release.find("duration").text
             rois = get_roi_from_config(release)
             filtered_df = pd.DataFrame()
             for roi in rois:
@@ -509,7 +511,8 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
                                                         (df['latitude'] <= roi["lat_max"]) & 
                                                         (df['longitude'] >= roi["lon_min"]) & 
                                                         (df['longitude'] <= roi["lon_max"]) &
-                                                        (df['confidence'] >= fire_confidence)]]
+                                                        (df['confidence'] >= fire_confidence) &
+                                                        (df['acq_date'] == reformat_time(release_date, "%Y%m%d", "%Y-%m-%d"))]]
                                         )
             if len(filtered_df)==0:
                 continue
@@ -730,7 +733,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
                                           hours=int(rel_time[2:4]),
                                           minutes=int(rel_time[4:6]),
                                           seconds=int(rel_time[6:]))
-            rel_duration = release_node.find("end_time").text
+            rel_duration = release_node.find("duration").text
             rel_duration = datetime.timedelta(days=int(rel_duration[:2]),
                                               hours=int(rel_duration[2:4]),
                                               minutes=int(rel_duration[4:6]),
@@ -1053,8 +1056,7 @@ if __name__=="__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="Python code that prepare all FLEXPART inputs"
-                                    "and launch FLEXPART simulations based on your configuration.xml and "
-                                    "parameters.xml files where you configure your simulation time, input data etc", 
+                                    "and launch FLEXPART simulations based on your configuration xml file", 
                                     formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-gc","--config", type=str, default="./girafe-config.xml",
                         help="Filepath to your configuration xml file.")
