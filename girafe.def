@@ -26,7 +26,7 @@ From: ubuntu:20.04
     export PATH=/opt/mamba/bin:$PATH
     mamba config --remove channels defaults
     mamba config --append channels conda-forge/label/dev
-    mamba install -y -c conda-forge python=3.9 numpy scipy eccodes hdf5 netCDF4 matplotlib cartopy pandas
+    mamba install -y -c conda-forge python numpy scipy eccodes hdf5 netCDF4 matplotlib cartopy pandas xarray
 
     # Install eccodes
     mkdir -p /usr/local
