@@ -794,10 +794,10 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
                             file.write(" ZKIND = 1,\n")
                             mass_string = f" MASS = {emissions[line,col]:E},\n"
                             file.write(mass_string.replace("e","E"))
-                            file.write(" PARTS = 50000,\n")
+                            file.write(" PARTS = 10000,\n")
                             file.write(f" COMMENT = \"{release_node.attrib['name']}_{zone.attrib['name']}_{iPix}\",\n")
                             file.write(" /\n")
-                            total_number_parts = total_number_parts + 50000
+                            total_number_parts = total_number_parts + 10000
     file.close()
     return total_number_parts
 
