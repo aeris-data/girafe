@@ -145,8 +145,8 @@
                     <start_date>20230501</start_date>
                     <!-- Start time of the emission DDHHMMSS from the above start_date -->
                     <start_time>00000000</start_time>
-                    <!-- End time of the emission DDHHMMSS from the above start_date-->
-                    <end_time>00120000</end_time>
+                    <!-- Duration of the emission DDHHMMSS from the above start_date and start_time -->
+                    <duration>00120000</duration>
                     <!-- Minimum altitude of the emission -->
                     <altitude_min>10</altitude_min>
                     <!-- Maximum altitude of the emission -->
