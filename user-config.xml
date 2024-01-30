@@ -193,6 +193,7 @@
             <ecmwf_dir>/o3p/ECMWF/ENFILES</ecmwf_dir>
             <!-- Docker path to emission data -->
             <!-- <emissions>/o3p/iagos/softio/EMISSIONS/CAMS-GLOB-ANT_Glb_0.1x0.1_anthro_co_v5.3_monthly.nc</emissions> -->
+            <!-- <emissions_variable>sum</emissions_variable> -->
             <emissions>/home/damali/Work/SEDOO/GIRAFE_wdir/modis_fire/MODIS_C6_1_Global_MCD14DL_NRT_2023324.txt</emissions>
         </paths>
     </girafe>
