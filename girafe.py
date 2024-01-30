@@ -341,7 +341,7 @@ def write_receptors_file(config_xml_filepath: str, working_dir: str) -> None:
     LOGGER.info("Preparing RECEPTORS file for FLEXPART")
     xml  = ET.parse(config_xml_filepath)
     xml  = xml.getroot().find("girafe/flexpart/receptor")
-    if xlm != None:
+    if xml != None:
         with open(working_dir+"/options/RECEPTORS","w") as file:
             for node in xml:
                 file.write("&RECEPTORS\n")
