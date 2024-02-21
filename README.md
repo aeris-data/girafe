@@ -4,16 +4,20 @@ GIRAFE - reGIonal ReAl time Fire plumEs
 
 GIRAFE is a software that provides plume trajectory forecasts. The trajectories are calculated using the Lagrangian transport model FLEXPART and the ECMWF meteorological fields.
 
+<p align="center">
+    <img width="300" src="logo.png" alt="GIRAFE logo">
+</p>
+
 ## Requirements
 The GIRAFE tool is containerized into a Singularity container so one must have Singularity installed on the host system intended for simulations.
 
 ## Installation
 ```
 git clone https://github.com/aeris-data/girafe.git
-sudo singularity build ./girafe.sif ./girafe-container.def
+sudo singularity build ./girafe-image.sif ./girafe-container.def
 ```
 
-The `singularity build` command will build the container `girafe.sif` from its definition file, using the source files got from the git repo; so for the build it is important to call the command from the git repo directory that one has made. 
+The `singularity build` command will build the container `girafe-image.sif` from its definition file, using the source files got from the git repo; so for the build it is important to call the command from the git repo directory that one has made. 
 
 ⚠️ ***The build requires either sudo rights or being able to use `--fakeroot` option (in a case of a multi-user server).***
 
@@ -25,28 +29,25 @@ The main script is `girafe.py` which needs the input configuration file `user-co
 python3 girafe.py --config user-config.xml [--shell-log]
 ```
 
-⚠️***The script must be launched inside the Singularity container.***
+⚠️ ***The script must be launched inside the Singularity container.***
 
 The outputs of the simulation are : plume estimated trajectories in the binary or netCDF format (based on your configuration) + PNG map plot of the estimated trajectories. More details about input/output and folder structure are in the manual.
 
 There are two possible ways to launch the simulation inside the Singularity container:
-- interactive mode (run a shell within a container, then launch the command within the shell of the container)
-
-```
-$ singularity shell [--bind path1,path2] path/to/girafes.sif
-Singularity>
-Singularity> python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
-```
-
 - one-line command (run a command within a container, wait for the end of simulation to regain control of the shell)
-
 ```
-& singularity exec [--bind path1,path2] path/to/girafes.sif python3 path/to/girafe.py --config path/to/user-config.xml [--shell-log]
+& singularity exec [--bind path1,path2] girafe-image.sif python3 girafe.py --config user-config.xml [--shell-log]
+```
+- interactive mode (run a shell within a container, then launch the command within the shell of the container)
+```
+$ singularity shell [--bind path1,path2] girafes-image.sif
+Singularity>
+Singularity> python3 girafe.py --config user-config.xml [--shell-log]
 ```
 
 ### Bind option
 
-The `--bind` option allows to map directories on the host system to directories within the container. When Singularity ‘swaps’ the host operating system for the one inside your container, the host file systems becomes partially inaccessible. The system administrator has the ability to define what bind paths will be included automatically inside each container. Some bind paths are automatically derived (e.g. a user’s home directory) and some are statically defined (e.g. bind paths in the Singularity configuration file). In the default configuration, the directories $HOME , /tmp , /proc , /sys , /dev, and $PWD are among the system-defined bind paths. Thus, in order to read and/or write files on the host system from within the container, one must to bind the necessary directories if they are not automatically included. Here’s an example of using the `--bind` option and binding `/data` on the host to `/mnt` in the container (`/mnt` does not need to already exist in the container):
+The `--bind` option allows to map directories on the host system to directories within the container. Most of the time, this option allows to solve the error *"File (or directory) not found"*, when all of the paths are configured correctly but the error persists. Here is why it can happen. When Singularity ‘swaps’ the host operating system for the one inside your container, the host file systems becomes partially inaccessible. The system administrator has the ability to define what bind paths will be included automatically inside each container. Some bind paths are automatically derived (e.g. a user’s home directory) and some are statically defined (e.g. bind paths in the Singularity configuration file). In the default configuration, the directories $HOME , /tmp , /proc , /sys , /dev, and $PWD are among the system-defined bind paths. Thus, in order to read and/or write files on the host system from within the container, one must to bind the necessary directories if they are not automatically included. Here’s an example of using the `--bind` option and binding `/data` on the host to `/mnt` in the container (`/mnt` does not need to already exist in the container):
 
 ```
 $ ls /data
