@@ -27,6 +27,49 @@ FLEXPART_EXE    = "/usr/local/flexpart_v10.4_3d7eebf/src/FLEXPART"
 
 plt.rcParams.update({'font.family':'serif'})
 
+DEFAULT_PARAMS = {"pi":3.14159265,
+                  "r_earth":6.371e6,
+                  "r_air":287.05,
+                  "nxmaxn":0,
+                  "nymaxn":0,
+                  "nxmax":361,
+                  "nymax":181,
+                  "nuvzmax":138,
+                  "nwzmax":138,
+                  "nzmax":138,
+                  "maxwf":50000,
+                  "maxtable":1000,
+                  "numclass":13,
+                  "ni":11,
+                  "maxcolumn":3000,
+                  "maxrand":1000000,
+                  "maxpart":100000,
+                  "forward":-1,
+                  "output":3600,
+                  "averageOutput":3600,
+                  "sampleRate":900,
+                  "particleSplitting":999999999,
+                  "synchronisation":900,
+                  "ctl":-5,
+                  "ifine":4,
+                  "iOut":9,
+                  "ipOut":2,
+                  "lSubGrid":1,
+                  "lConvection":1,
+                  "lAgeSpectra":0,
+                  "ipIn":0,
+                  "iOfr":0,
+                  "iFlux":0,
+                  "mDomainFill":0,
+                  "indSource":1,
+                  "indReceptor":1,
+                  "mQuasilag":0,
+                  "nestedOutput":0,
+                  "lInitCond":0,
+                  "surfOnly":0,
+                  "cblFlag":0,
+                  "ageclass":172800}
+
 def write_header_in_file(filepath: str) -> None:
     with open(filepath,"w") as file:
         file.write("╔════════════════════════════════════════════════╗\n")
@@ -77,10 +120,16 @@ def get_simulation_date(xml_file: str) -> dict:
     xml  = ET.parse(xml_file)
     # ________________________________________________________
     # Check if all nodes are present
-    xml_nodes = ["girafe/simulation_date",
-                 "girafe/simulation_date/begin",
-                 "girafe/simulation_date/end",
-                 "girafe/simulation_date/dtime"]
+    # xml_nodes = ["girafe/simulation_date",
+    #              "girafe/simulation_date/begin",
+    #              "girafe/simulation_date/end",
+    #              "girafe/simulation_date/dtime"]
+    xml_nodes = ["girafe/simulation_start",
+                 "girafe/simulation_start/date",
+                 "girafe/simulation_end",
+                 "girafe/simulation_end/date",
+                 "girafe/ecmwf_time",
+                 "girafe/ecmwf_time/dtime"]
     for node in xml_nodes:
         try:
             found_node = xml.getroot().find(node)
@@ -89,11 +138,11 @@ def get_simulation_date(xml_file: str) -> dict:
             sys.exit(1)
     # ________________________________________________________
     # Get date from the xml
-    xml  = xml.getroot().find("girafe").find("simulation_date")
+    xml  = xml.getroot().find("girafe")
     date = {}
-    date["begin"] = xml.find("begin").text
-    date["end"]   = xml.find("end").text
-    date["dtime"] = int(xml.find("dtime").text)
+    date["begin"] = xml.find("simulation_start").find("date").text
+    date["end"]   = xml.find("simulation_end").find("date").text
+    date["dtime"] = int(xml.find("ecmwf_time").find("dtime").text)
     # ________________________________________________________
     # Check if strings are correct
     try:
@@ -119,9 +168,13 @@ def get_simulation_time(xml_file: str) -> dict:
     xml  = ET.parse(xml_file)
     # ________________________________________________________
     # Check if all nodes are present
-    xml_nodes = ["girafe/simulation_time",
-                 "girafe/simulation_time/begin",
-                 "girafe/simulation_time/end"]
+    # xml_nodes = ["girafe/simulation_start",
+    #              "girafe/simulation_time/begin",
+    #              "girafe/simulation_time/end"]
+    xml_nodes = ["girafe/simulation_start",
+                 "girafe/simulation_start/time",
+                 "girafe/simulation_end",
+                 "girafe/simulation_end/time"]
     for node in xml_nodes:
         try:
             found_node = xml.getroot().find(node)
@@ -130,10 +183,10 @@ def get_simulation_time(xml_file: str) -> dict:
             sys.exit(1)
     # ________________________________________________________
     # Get time from the xml file
-    xml  = xml.getroot().find("girafe").find("simulation_time")
+    xml  = xml.getroot().find("girafe")
     time = {}
-    time["begin"] = xml.find("begin").text
-    time["end"]   = xml.find("end").text
+    time["begin"] = xml.find("simulation_start").find("time").text
+    time["end"]   = xml.find("simulation_end").find("time").text
     # ________________________________________________________
     # Check if strings are correct
     try:
@@ -198,10 +251,14 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
     xml  = ET.parse(config_xml_filepath)
     xml  = xml.getroot().find("girafe")
     xml_keys = ["flexpart/command/forward",
-                "simulation_date/begin",
-                "simulation_time/begin",
-                "simulation_date/end",
-                "simulation_time/end",
+                # "simulation_date/begin",
+                # "simulation_time/begin",
+                # "simulation_date/end",
+                # "simulation_time/end",
+                "simulation_start/date",
+                "simulation_start/time",
+                "simulation_end/date",
+                "simulation_end/time",
                 "flexpart/command/time/output",
                 "flexpart/command/time/averageOutput",
                 "flexpart/command/time/sampleRate",
@@ -228,11 +285,11 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
     flexpart_keys = ["LDIRECT","IBDATE","IBTIME","IEDATE","IETIME","LOUTSTEP","LOUTAVER","LOUTSAMPLE","ITSPLIT","LSYNCTIME","CTL",
                      "IFINE","IOUT","IPOUT","LSUBGRID","LCONVECTION","LAGESPECTRA","IPIN","IOUTPUTFOREACHRELEASE","IFLUX","MDOMAINFILL",
                      "IND_SOURCE","IND_RECEPTOR","MQUASILAG","NESTED_OUTPUT","LINIT_COND","SURF_ONLY","CBLFLAG"]
-    try:
-        flexpart_root = xml.find("flexpart/root").text
-    except:
-        LOGGER.error("<flexpart/root> node is missing, check your configuration file!")
-        sys.exit(1)
+    # try:
+    #     flexpart_root = xml.find("flexpart/root").text
+    # except:
+    #     LOGGER.error("<flexpart/root> node is missing, check your configuration file!")
+    #     sys.exit(1)
     # ----------------------------------------------------
     # MANUAL VERSION
     # ----------------------------------------------------
@@ -248,7 +305,10 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
             try:
                 value = xml.find(xml_keys[ii]).text
             except:
-                LOGGER.error(f"<{xml_keys[ii]}> node is missing, check your configuration file!")
+                try:
+                    value = DEFAULT_PARAMS[os.path.basename(xml_keys[ii])]
+                except:
+                    LOGGER.error(f"<{xml_keys[ii]}> node is mandatory but missing, check your configuration file!")
             file.write(" "+
                        flexpart_keys[ii]+"="+
                        " "*(24-len(flexpart_keys[ii])-1-len(value))+
@@ -340,15 +400,34 @@ def write_outgrid_file(config_xml_filepath: str, working_dir: str) -> None:
 def write_receptors_file(config_xml_filepath: str, working_dir: str) -> None:
     LOGGER.info("Preparing RECEPTORS file for FLEXPART")
     xml  = ET.parse(config_xml_filepath)
-    xml  = xml.getroot().find("girafe/flexpart/receptor")
-    if xml != None:
+    try:
+        xml  = xml.getroot().find("girafe/flexpart/receptor")
+        if xml != None:
+            with open(working_dir+"/options/RECEPTORS","w") as file:
+                for node in xml:
+                    file.write("&RECEPTORS\n")
+                    file.write(f" RECEPTOR=\"{node.attrib['name']}\",\n")
+                    file.write(f" LON={node.attrib['longitude']},\n")
+                    file.write(f" LAT={node.attrib['latitude']},\n")
+                    file.write(" /\n")
+    except:
         with open(working_dir+"/options/RECEPTORS","w") as file:
-            for node in xml:
-                file.write("&RECEPTORS\n")
-                file.write(" RECEPTOR=\""+node.attrib["name"]+"\",\n")
-                file.write(" LON="+node.attrib["longitude"]+",\n")
-                file.write(" LAT="+node.attrib["latitude"]+",\n")
+            file.write("")
+
+def write_ageclasses_file(config_xml_filepath: str, working_dir: str) -> None:
+    LOGGER.info("Preparing AGECLASSES file for FLEXPART")
+    xml  = ET.parse(config_xml_filepath)
+    try:
+        xml  = xml.getroot().find("girafe/flexpart/ageclass")
+        if xml != None:
+            with open(working_dir+"/options/AGECLASS","w") as file:
+                file.write("&AGECLASS\n")
+                file.write(" NAGECLASS=1\n")
+                file.write(f" LAGE={xml.find('class').text}\n")
                 file.write(" /\n")
+    except:
+        with open(working_dir+"/options/AGECLASS","w") as file:
+            file.write("")
 
 def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_parts: int) -> None:
     LOGGER.info("Preparing par_mod.f90 file for FLEXPART")
@@ -498,7 +577,11 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
     # --------------------------------------------------------------------------------------------------------
     df = pd.read_csv(emission_filepath)
     release_nodes = xml.getroot().find("girafe/flexpart/releases")
-    fire_confidence = float(release_nodes.find("fire_confidence").text)
+    try:
+        fire_confidence = float(release_nodes.find("fire_confidence").text)
+    except:
+        LOGGER.error("fire_confidence node is mandatory for MODIS processing, check your configuration file!")
+        sys.exit(1)
     total_number_parts = 0
     for release in release_nodes:
         if release.tag=="release":
@@ -965,87 +1048,88 @@ def plot_girafe_simulation(nc_filepath, output_dir):
     Nlevels            = 21
 
     for var in data_variables:
-        QL_dir = output_dir
-        species_name  = ds.variables[var].long_name
-        # =============================================================================
-        arr_type  = output_type[var.split("_")[-1]]
-        arr_units = output_units[var.split("_")[-1]]
-        # =============================================================================
-        var_array, val_min, val_max = calc_conc_integrated(ds, var, alt)
-        # LOGGER.info(f"Integrated concentration are between {val_min} and {val_max}")
-        non_empty_lats = np.any(var_array, axis=(0, 2))
-        non_empty_lons = np.any(var_array, axis=(0, 1))
-        min_lat, max_lat = np.where(non_empty_lats)[0][[0, -1]]
-        min_lon, max_lon = np.where(non_empty_lons)[0][[0, -1]]
-        countour_levels = np.logspace(math.log10(val_min),math.log10(val_max),Nlevels)
-        # =============================================================================
-        for time_index in range(len(time)):
-            LOGGER.info(f"Creating figure for {var} - time {time_index+1}/{len(time)}")
-            fig = plt.figure(figsize=(11.7,8.3))
-            ax  = fig.add_axes(plt.axes(projection=crs.PlateCarree()))
-            ax.stock_img()
-            ax.set_global()
+        if "mr" in var:
+            QL_dir = output_dir
+            species_name  = ds.variables[var].long_name
+            # =============================================================================
+            arr_type  = output_type[var.split("_")[-1]]
+            arr_units = output_units[var.split("_")[-1]]
+            # =============================================================================
+            var_array, val_min, val_max = calc_conc_integrated(ds, var, alt)
+            # LOGGER.info(f"Integrated concentration are between {val_min} and {val_max}")
+            non_empty_lats = np.any(var_array, axis=(0, 2))
+            non_empty_lons = np.any(var_array, axis=(0, 1))
+            min_lat, max_lat = np.where(non_empty_lats)[0][[0, -1]]
+            min_lon, max_lon = np.where(non_empty_lons)[0][[0, -1]]
+            countour_levels = np.logspace(math.log10(val_min),math.log10(val_max),Nlevels)
+            # =============================================================================
+            for time_index in range(len(time)):
+                LOGGER.info(f"Creating figure for {var} - time {time_index+1}/{len(time)}")
+                fig = plt.figure(figsize=(11.7,8.3))
+                ax  = fig.add_axes(plt.axes(projection=crs.PlateCarree()))
+                ax.stock_img()
+                ax.set_global()
 
-            # Plot data (contour, scatter points or pixels)
-            obj = ax.contourf(lon,
-                              lat,
-                              var_array[time_index,:,:],
-                              transform=crs.PlateCarree(),
-                              levels=countour_levels,
-                              cmap="jet",
-                              norm = matplotlib.colors.LogNorm(vmin=val_min,vmax=val_max))
-            # obj = ax.scatter(x=lon_mesh,
-            #                  y=lat_mesh,
-            #                  c=conc_i[time_index,:,:],
-            #                  s=7,
-            #                  cmap="jet",
-            #                  vmin=val_min,
-            #                  vmax=val_max,
-            #                  transform=crs.PlateCarree(),
-            #                  norm=matplotlib.colors.LogNorm())
-            # obj = ax.imshow(var_array[time_index,:,:],
-            #                 cmap="jet",
-            #                 extent=[min(lon)-0.05, max(lon)+0.05, min(lat)-0.05, max(lat)+0.05],
-            #                 transform=crs.PlateCarree(),
-            #                 norm=colors.LogNorm(vmin=val_min,vmax=val_max))
+                # Plot data (contour, scatter points or pixels)
+                obj = ax.contourf(lon,
+                                lat,
+                                var_array[time_index,:,:],
+                                transform=crs.PlateCarree(),
+                                levels=countour_levels,
+                                cmap="jet",
+                                norm = matplotlib.colors.LogNorm(vmin=val_min,vmax=val_max))
+                # obj = ax.scatter(x=lon_mesh,
+                #                  y=lat_mesh,
+                #                  c=conc_i[time_index,:,:],
+                #                  s=7,
+                #                  cmap="jet",
+                #                  vmin=val_min,
+                #                  vmax=val_max,
+                #                  transform=crs.PlateCarree(),
+                #                  norm=matplotlib.colors.LogNorm())
+                # obj = ax.imshow(var_array[time_index,:,:],
+                #                 cmap="jet",
+                #                 extent=[min(lon)-0.05, max(lon)+0.05, min(lat)-0.05, max(lat)+0.05],
+                #                 transform=crs.PlateCarree(),
+                #                 norm=colors.LogNorm(vmin=val_min,vmax=val_max))
 
-            # Draw coastlines on the map
-            ax.add_feature(cf.COASTLINE, linewidth=0.3)
-            ax.add_feature(cf.BORDERS, linewidth=0.3)
-            # ax.set_extent([lon[min_lon], lon[max_lon], lat[min_lat], lat[max_lat]])
+                # Draw coastlines on the map
+                ax.add_feature(cf.COASTLINE, linewidth=0.3)
+                ax.add_feature(cf.BORDERS, linewidth=0.3)
+                # ax.set_extent([lon[min_lon], lon[max_lon], lat[min_lat], lat[max_lat]])
 
-            # Create colorbar with a log scale, change log ticklabels to our data values
-            cb_ticks = np.logspace(math.log10(val_min),math.log10(val_max),10)
-            cb       = fig.colorbar(obj, ticks=cb_ticks, fraction=0.047*im_ratio)
-            cb.minorticks_off()
-            cb.ax.set_yticklabels(["{:.2e}".format(elem) for elem in cb_ticks], fontsize=15)
+                # Create colorbar with a log scale, change log ticklabels to our data values
+                cb_ticks = np.logspace(math.log10(val_min),math.log10(val_max),10)
+                cb       = fig.colorbar(obj, ticks=cb_ticks, fraction=0.047*im_ratio)
+                cb.minorticks_off()
+                cb.ax.set_yticklabels(["{:.2e}".format(elem) for elem in cb_ticks], fontsize=15)
 
-            # Grid line
-            gl = ax.gridlines(draw_labels=True, color='gray', alpha=0.7, linestyle='--')
-            gl.top_labels = False
-            gl.right_labels = False
-            gl.xlabel_style = {'size': 15}
-            gl.ylabel_style = {'size': 15}
+                # Grid line
+                gl = ax.gridlines(draw_labels=True, color='gray', alpha=0.7, linestyle='--')
+                gl.top_labels = False
+                gl.right_labels = False
+                gl.xlabel_style = {'size': 15}
+                gl.ylabel_style = {'size': 15}
 
-            # Title
-            plt.title(f"{datetime.datetime.strftime(arr_datetime[time_index], '%Y-%m-%d %H:%M:%S')}\n\n",
-                    loc='center',
-                    fontsize=20,
-                    fontweight="bold")
-            plt.title(f"{N_releases} {species_name} sources",
-                    loc='left',
-                    fontsize=20)
-            plt.title(f"{arr_type}\n[{arr_units}]",
-                    loc="right",
-                    fontsize=20,
-                    pad=20)
+                # Title
+                plt.title(f"{datetime.datetime.strftime(arr_datetime[time_index], '%Y-%m-%d %H:%M:%S')}\n\n",
+                        loc='center',
+                        fontsize=20,
+                        fontweight="bold")
+                plt.title(f"{N_releases} {species_name} sources",
+                        loc='left',
+                        fontsize=20)
+                plt.title(f"{arr_type}\n[{arr_units}]",
+                        loc="right",
+                        fontsize=20,
+                        pad=20)
 
-            # Save figure
-            output_path = f"{QL_dir}/QL_{var.split('_')[-1]}_time_{str(time_index+1).zfill(3)}.png"
-            fig.savefig(fname=output_path,
-                        format='png',
-                        bbox_inches='tight')
-            plt.close(fig)
+                # Save figure
+                output_path = f"{QL_dir}/QL_{var.split('_')[-1]}_time_{str(time_index+1).zfill(3)}.png"
+                fig.savefig(fname=output_path,
+                            format='png',
+                            bbox_inches='tight')
+                plt.close(fig)
 
 # ===============================================================================================================
 
