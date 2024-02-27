@@ -316,7 +316,7 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
                 value = xml.find(xml_keys[ii]).text
             except:
                 try:
-                    value = DEFAULT_PARAMS[os.path.basename(xml_keys[ii])]
+                    value = str(DEFAULT_PARAMS[os.path.basename(xml_keys[ii])])
                 except:
                     LOGGER.error(f"<{xml_keys[ii]}> node is mandatory but missing, check your configuration file!")
             file.write(" "+
