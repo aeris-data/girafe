@@ -91,12 +91,22 @@ def print_header_in_terminal() -> None:
     LOGGER.info("║  /#/  fsc                      SIMULATION      ║")
     LOGGER.info("╚════════════════════════════════════════════════╝")
 
-def start_log(shell_option: bool=True, log_filepath: str="") -> logging.Logger:
+# def start_log(shell_option: bool=True, log_filepath: str="") -> logging.Logger:
+#     log_handlers = []
+#     if shell_option==True:
+#         log_handlers.append(logging.StreamHandler())
+#     log_handlers.append(logging.FileHandler(log_filepath))
+#     write_header_in_file(log_filepath)
+#     logging.basicConfig(format="%(asctime)s   [%(levelname)s]   %(message)s",
+#                         datefmt="%d/%m/%Y %H:%M:%S",
+#                         handlers=log_handlers)
+#     logger = logging.getLogger('my_log')
+#     logger.setLevel(logging.DEBUG)
+#     return logger
+
+def start_log() -> logging.Logger:
     log_handlers = []
-    if shell_option==True:
-        log_handlers.append(logging.StreamHandler())
-    log_handlers.append(logging.FileHandler(log_filepath))
-    write_header_in_file(log_filepath)
+    log_handlers.append(logging.StreamHandler())
     logging.basicConfig(format="%(asctime)s   [%(levelname)s]   %(message)s",
                         datefmt="%d/%m/%Y %H:%M:%S",
                         handlers=log_handlers)
@@ -1150,11 +1160,15 @@ if __name__=="__main__":
     config_xmlpath = args.config
     wdir           = get_working_dir(config_xmlpath)
 
+    # global LOGGER, LOG_FILEPATH
+    # LOG_FILEPATH = wdir+"/girafe-simulation.log"
+    # LOGGER = start_log(args.shell_log, LOG_FILEPATH)
+    # if args.shell_log==True:
+    #     print_header_in_terminal()
+
     global LOGGER, LOG_FILEPATH
-    LOG_FILEPATH = wdir+"/girafe-simulation.log"
-    LOGGER = start_log(args.shell_log, LOG_FILEPATH)
-    if args.shell_log==True:
-        print_header_in_terminal()
+    LOGGER = start_log()
+    print_header_in_terminal()
 
     status = prepare_working_dir(wdir)
     if status!=0:
