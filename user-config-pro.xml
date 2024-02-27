@@ -3,21 +3,24 @@
         <!-- Current GIRAFE version (DO NOT CHANGE)-->
         <version>7.0</version>
 
-        <simulation_date>
-            <!-- simulation beginning date (YYYYMMDD) -->
-            <begin>20230501</begin>
-            <!-- simulation ending date (YYYYMMDD) -->
-            <end>20230505</end>
-            <!-- Time between requested ECMWF fields (3 or 6 hours) -->
-            <dtime>3</dtime>
-        </simulation_date>
+        <simulation_start>
+            <!-- simulation begin date (YYYYMMDD) -->
+            <date>20230501</date>
+            <!-- simulation begin time (HHMMSS) -->
+            <time>000000</time>
+        </simulation_start>
 
-        <simulation_time>
-            <!-- simulation beginning time (HHMMSS) -->
-            <begin>000000</begin>
-            <!-- simulation ending time (HHMMSS) -->
-            <end>230000</end>
-        </simulation_time>
+        <simulation_end>
+            <!-- simulation end date (YYYYMMDD) -->
+            <date>20230501</date>
+            <!-- simulation end time (HHMMSS) -->
+            <time>233000</time>
+        </simulation_end>
+
+        <ecmwf_time>
+            <!-- Time between ECMWF fields in hours -->
+            <dtime>3</dtime>
+        </ecmwf_time>
 
         <flexpart>
             <!-- FLEXPART root directory (DO NOT CHANGE)-->
