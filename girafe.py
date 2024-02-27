@@ -958,19 +958,24 @@ def copy_source_files(working_dir: str) -> None:
 
 def prepare_working_dir(working_dir: str) -> None:
     if os.path.exists(working_dir):
-        if not os.path.exists(f"{working_dir}/options"):
-            os.mkdir(f"{working_dir}/options")
-        if not os.path.exists(f"{working_dir}/output"):
-            os.mkdir(f"{working_dir}/output")
-        shutil.copy(f"{FLEXPART_ROOT}/options/IGBP_int1.dat", f"{working_dir}/options/")
-        shutil.copy(f"{FLEXPART_ROOT}/options/surfdata.t", f"{working_dir}/options/")
-        shutil.copy(f"{FLEXPART_ROOT}/options/surfdepo.t", f"{working_dir}/options/")
-        if not os.path.exists(f"{working_dir}/options/SPECIES/"):
-            shutil.copytree(f"{FLEXPART_ROOT}/options/SPECIES", f"{working_dir}/options/SPECIES/")
-        return 0
+        pass
     else:
-        LOGGER.error("The working dir ({working_dir}) does not exist...")
-        return 1
+        try:
+            os.mkdir(wdir)
+        except:
+            LOGGER.error(f"The working dir ({working_dir}) does not exist, and Python did not manage to create it...")
+            return 1
+    if not os.path.exists(f"{working_dir}/options"):
+        os.mkdir(f"{working_dir}/options")
+    if not os.path.exists(f"{working_dir}/output"):
+        os.mkdir(f"{working_dir}/output")
+    shutil.copy(f"{FLEXPART_ROOT}/options/IGBP_int1.dat", f"{working_dir}/options/")
+    shutil.copy(f"{FLEXPART_ROOT}/options/surfdata.t", f"{working_dir}/options/")
+    shutil.copy(f"{FLEXPART_ROOT}/options/surfdepo.t", f"{working_dir}/options/")
+    if not os.path.exists(f"{working_dir}/options/SPECIES/"):
+        shutil.copytree(f"{FLEXPART_ROOT}/options/SPECIES", f"{working_dir}/options/SPECIES/")
+    return 0
+    
 
 def run_bash_command(command_string: str, working_dir: str) -> None:
     """
