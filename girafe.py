@@ -333,21 +333,21 @@ def write_outgrid_file(config_xml_filepath: str, working_dir: str) -> None:
     xml  = ET.parse(config_xml_filepath)
     # ________________________________________________________
     # Check if all nodes are present
-    xml_nodes = ["girafe/flexpart/outGrid",
-                 "girafe/flexpart/outGrid/longitude/min",
-                 "girafe/flexpart/outGrid/longitude/max",
-                 "girafe/flexpart/outGrid/latitude/min",
-                 "girafe/flexpart/outGrid/latitude/max",
-                 "girafe/flexpart/outGrid/resolution"]
+    xml_nodes = ["girafe/flexpart/out_grid",
+                 "girafe/flexpart/out_grid/longitude/min",
+                 "girafe/flexpart/out_grid/longitude/max",
+                 "girafe/flexpart/out_grid/latitude/min",
+                 "girafe/flexpart/out_grid/latitude/max",
+                 "girafe/flexpart/out_grid/resolution"]
     for node in xml_nodes:
         try:
             found_node = xml.getroot().find(node)
         except:
-            LOGGER.error("<flexpart/outGrid> node is missing or its children nodes are in incorrect format, check your configuration file!")
+            LOGGER.error("<flexpart/out_grid> node is missing or its children nodes are in incorrect format, check your configuration file!")
             sys.exit(1)
     # ________________________________________________________
     # Get data from the xml file
-    xml  = xml.getroot().find("girafe/flexpart/outGrid")
+    xml  = xml.getroot().find("girafe/flexpart/out_grid")
     Nx = int((float(xml.find("longitude/max").text) - float(xml.find("longitude/min").text))/float(xml.find("resolution").text))
     Ny = int((float(xml.find("latitude/max").text) - float(xml.find("latitude/min").text))/float(xml.find("resolution").text))
     height_levels = [node.text for node in xml.find("height")]
