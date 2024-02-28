@@ -44,7 +44,7 @@ DEFAULT_PARAMS = {"pi":3.14159265,
                   "maxcolumn":3000,
                   "maxrand":1000000,
                   "maxpart":100000,
-                  "forward":-1,
+                  "forward":1,
                   "output":3600,
                   "averageOutput":3600,
                   "sampleRate":900,
@@ -53,7 +53,7 @@ DEFAULT_PARAMS = {"pi":3.14159265,
                   "ctl":-5,
                   "ifine":4,
                   "iOut":9,
-                  "ipOut":2,
+                  "ipOut":0,
                   "lSubGrid":1,
                   "lConvection":1,
                   "lAgeSpectra":0,
@@ -410,34 +410,43 @@ def write_outgrid_file(config_xml_filepath: str, working_dir: str) -> None:
 def write_receptors_file(config_xml_filepath: str, working_dir: str) -> None:
     LOGGER.info("Preparing RECEPTORS file for FLEXPART")
     xml  = ET.parse(config_xml_filepath)
-    try:
-        xml  = xml.getroot().find("girafe/flexpart/receptor")
-        if xml != None:
-            with open(working_dir+"/options/RECEPTORS","w") as file:
-                for node in xml:
-                    file.write("&RECEPTORS\n")
-                    file.write(f" RECEPTOR=\"{node.attrib['name']}\",\n")
-                    file.write(f" LON={node.attrib['longitude']},\n")
-                    file.write(f" LAT={node.attrib['latitude']},\n")
-                    file.write(" /\n")
-    except:
+    xml  = xml.getroot().find("girafe/flexpart/receptor")
+    if xml != None:
         with open(working_dir+"/options/RECEPTORS","w") as file:
-            file.write("")
+            for node in xml:
+                file.write("&RECEPTORS\n")
+                file.write(f" RECEPTOR=\"{node.attrib['name']}\",\n")
+                file.write(f" LON={node.attrib['longitude']},\n")
+                file.write(f" LAT={node.attrib['latitude']},\n")
+                file.write(" /\n")
+    else:
+        LOGGER.info("No receptors were requested")
+        # if os.path.exists(f"{working_dir}/options/RECEPTORS"):
+            # os.remove(f"{working_dir}/options/RECEPTORS")
+        with open(working_dir+"/options/RECEPTORS","w") as file:
+            file.write("&RECEPTORS")
+            file.write(f" RECEPTOR=\"receptor 1\"\n")
+            file.write(f" LON=0.0,\n")
+            file.write(f" LAT=0.0,\n")
+            file.write(" /\n")
 
 def write_ageclasses_file(config_xml_filepath: str, working_dir: str) -> None:
     LOGGER.info("Preparing AGECLASSES file for FLEXPART")
     xml  = ET.parse(config_xml_filepath)
-    try:
-        xml  = xml.getroot().find("girafe/flexpart/ageclass")
-        if xml != None:
-            with open(working_dir+"/options/AGECLASS","w") as file:
-                file.write("&AGECLASS\n")
-                file.write(" NAGECLASS=1\n")
-                file.write(f" LAGE={xml.find('class').text}\n")
-                file.write(" /\n")
-    except:
+    xml  = xml.getroot().find("girafe/flexpart/ageclass")
+    if xml != None:
         with open(working_dir+"/options/AGECLASS","w") as file:
-            file.write("")
+            file.write("&AGECLASS\n")
+            file.write(" NAGECLASS=1\n")
+            file.write(f" LAGE={xml.find('class').text}\n")
+            file.write(" /\n")
+    else:
+        LOGGER.info("Taking default ageclass value")
+        with open(working_dir+"/options/AGECLASS","w") as file:
+            file.write("&AGECLASS\n")
+            file.write(" NAGECLASS=1\n")
+            file.write(f" LAGE={DEFAULT_PARAMS['ageclass']}\n")
+            file.write(" /\n")
 
 def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_parts: int) -> None:
     LOGGER.info("Preparing par_mod.f90 file for FLEXPART")
@@ -782,6 +791,17 @@ def write_releases_file_for_modis(config_xml_filepath: str, working_dir: str):
 #     file.close()
 #     return total_number_parts
 
+def find_lat_lon_variables(dataset: xr.Dataset) -> str:
+    lat_name, lon_name = "a", "b"
+    for var in dataset.coords.keys():
+        if "standard_name" in dataset[var].attrs.keys():
+            if dataset[var].attrs["standard_name"]=="latitude":
+                lat_name = var
+        if "standard_name" in dataset[var].attrs.keys():
+            if dataset[var].attrs["standard_name"]=="longitude":
+                lon_name = var
+    return lat_name, lon_name
+
 def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str) -> int:
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
@@ -814,6 +834,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
     # Get time/lat/lon extracts to compute emissions
     # ----------------------------------------------------
     ds = xr.open_dataset(emission_filepath)
+    lat_varname, lon_varname = find_lat_lon_variables(ds)
     ds = ds.drop_duplicates(dim="time")
     releases_nodes = xml.getroot().find("girafe/flexpart/releases")
     total_number_parts = 0
@@ -860,11 +881,11 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
 
                 # Get the subset of the data
                 sub_ds = ds.sel(time=pd.to_datetime(rel_start_datetime), method="nearest")
-                sub_ds = sub_ds.sel(lat=slice(rel_lat_min, rel_lat_max), lon=slice(rel_lon_min, rel_lon_max))
+                sub_ds = sub_ds.sel({lat_varname: slice(rel_lat_min, rel_lat_max), lon_varname: slice(rel_lon_min, rel_lon_max)})
 
-                lon_mesh, lat_mesh = np.meshgrid(sub_ds.lon.values, sub_ds.lat.values)
+                lon_mesh, lat_mesh = np.meshgrid(sub_ds[lon_varname].values, sub_ds[lat_varname].values)
                 earth_R = 6378.1
-                Lref = np.abs(sub_ds.lon[1].values - sub_ds.lon[0].values)*2*np.pi*earth_R/360.0 # spatial resolution of the data converted from degrees to meters on the eqautor
+                Lref = np.abs(sub_ds[lon_varname][1].values - sub_ds[lon_varname][0].values)*2*np.pi*earth_R/360.0 # spatial resolution of the data converted from degrees to meters on the eqautor
                 pixel_surface = (Lref * np.cos(np.radians(lat_mesh))) * Lref # longueur suivant X * longueur suivant Y adapte aux coordonnees du point
                 emissions = sub_ds[emission_variable] * pixel_surface * rel_duration.total_seconds()
                 
@@ -897,7 +918,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
 def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
-    if ("MCD14DL" in emission_filepath) or ("fire_nrt" in emission_filepath):
+    if ("MCD14DL" in emission_filepath) or ("fire" in emission_filepath):
         return write_releases_file_for_modis(config_xml_filepath, working_dir)
     elif (".nc" in emission_filepath) and ("CAMS" in emission_filepath):
         return write_releases_file_for_inventory(config_xml_filepath, working_dir)
@@ -987,47 +1008,15 @@ def run_bash_command(command_string: str, working_dir: str) -> None:
     process = subprocess.Popen(command_string, cwd=working_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while True:
         output = process.stdout.readline()
+        # output_err = process.stderr.readline()
         if process.poll() is not None:
             break
         if output:
             LOGGER.info(output.strip().decode('utf-8'))
+        # if output_err:
+        #     LOGGER.error(output_err.strip().decode('utf-8'))
     return_code = process.poll()
     return return_code
-
-# def run_bash_command(command_string: str, working_dir: str) -> int:
-#     try:
-#         # print("----------------> try begins")
-#         result = subprocess.run(
-#             command_string,
-#             cwd=working_dir,
-#             shell=True,
-#             check=True,  # Raises a CalledProcessError for non-zero return codes
-#             stdout=subprocess.PIPE,
-#             stderr=subprocess.PIPE,
-#             universal_newlines=True
-#         )
-
-#         # print("----------------> calling for result stdout and std err in try section")
-#         # Log stdout and stderr
-#         LOGGER.info(result.stdout.strip())
-#         LOGGER.error(result.stderr.strip())
-        
-#         # print(f"----------------> in try section result.stdout = {result.stdout.strip()}")
-#         # print(f"----------------> in try section result.stderr = {result.stderr.strip()}")
-        
-#         return result.returncode
-
-#     except subprocess.CalledProcessError as e:
-#         # print("----------------> i'm in the except section")
-#         # Log the error and return the return code
-#         LOGGER.error(f"Command '{e.cmd}' failed with return code {e.returncode}")
-#         LOGGER.error(f"stdout: {e.stdout.strip()}")
-#         LOGGER.error(f"stderr: {e.stderr.strip()}")
-#         # print(f"----------------> in except section Command '{e.cmd}' failed with return code {e.returncode}")
-#         # print(f"----------------> in except section stdout: {e.stdout.strip()}")
-#         # print(f"----------------> in except section stderr: {e.stderr.strip()}")
-#         return e.returncode
-
 
 def calc_conc_integrated(nc_dataset: nc.Dataset, var_name: str, altitude_array: np.array):
     arr = nc_dataset.variables[var_name][0,0,:,:,:,:]
@@ -1165,12 +1154,6 @@ if __name__=="__main__":
     config_xmlpath = args.config
     wdir           = get_working_dir(config_xmlpath)
 
-    # global LOGGER, LOG_FILEPATH
-    # LOG_FILEPATH = wdir+"/girafe-simulation.log"
-    # LOGGER = start_log(args.shell_log, LOG_FILEPATH)
-    # if args.shell_log==True:
-    #     print_header_in_terminal()
-
     global LOGGER, LOG_FILEPATH
     LOGGER = start_log()
     print_header_in_terminal()
@@ -1196,6 +1179,7 @@ if __name__=="__main__":
     write_command_file(config_xmlpath,wdir)
     write_outgrid_file(config_xmlpath,wdir)
     write_receptors_file(config_xmlpath,wdir)
+    write_ageclasses_file(config_xmlpath,wdir)
     Nparts = write_releases_file(config_xmlpath,wdir)
     if Nparts==-1:
         LOGGER.error("Error in the emissions filepath. Only MODIS MCD14DL txt files or netCDF CAMS inventories are accepted.")
