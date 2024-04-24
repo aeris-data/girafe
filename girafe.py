@@ -457,8 +457,6 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
                 "r_air":287.05,
                 "nxmaxn":0,
                 "nymaxn":0,
-                "nxmax":361,
-                "nymax":181,
                 "nuvzmax":138,
                 "nwzmax":138,
                 "nzmax":138,
@@ -471,11 +469,17 @@ def write_par_mod_file(config_xml_filepath: str, working_dir: str, max_number_pa
                 "maxpart":max_number_parts}
     keys_values = {}
     for key in xml_keys:
-        if (xml.find(key) is not None) and (xml.find(key).text!=""):
+        if (xml.find(key) is not None) and (xml.find(key).text!="") and (xml.find(key).text is not None):
             value = float(xml.find(key).text) if "." in xml.find(key).text else int(xml.find(key).text)
             keys_values.update({key: value}) 
         else:
             keys_values.update({key: xml_keys[key]})
+    for key in ["nxmax","nymax"]:
+        if (xml.find(key) is None) or (xml.find(key).text is None):
+            LOGGER.error("nxmax and nymax are mandatory nodes in the configuration file, and they must not be empty")
+        else:
+            value = float(xml.find(key).text) if "." in xml.find(key).text else int(xml.find(key).text)
+            keys_values.update({key: value}) 
     with open(f"{working_dir}/flexpart_src/par_mod.f90", "w") as file:
         file.write(f"module par_mod\n")
         file.write(f"  implicit none\n")
@@ -926,24 +930,26 @@ def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
         return -1
 
 def compile_flexpart(working_dir: str) -> None:
-    # Compile FLEXPART
     LOGGER.info("Compiling FLEXPART")
+    # *************************************************************************************************
     bashCommand = ["make", "clean"]
-    result = subprocess.run(bashCommand, cwd=f"{working_dir}/flexpart_src", capture_output=True)
+    with open(f"{working_dir}/flexpart_compile.out", "w") as file:
+        result = subprocess.run(bashCommand, cwd=f"{working_dir}/flexpart_src", stdout=file, stderr=file)
     if result.returncode!=0:
-        LOGGER.error(result.stderr)
         return 1
+    # *************************************************************************************************
     bashCommand = ["make", "ncf=yes"]
-    result = subprocess.run(bashCommand, cwd=f"{working_dir}/flexpart_src", capture_output=True)
+    with open(f"{working_dir}/flexpart_compile.out", "a") as file:
+        result = subprocess.run(bashCommand, cwd=f"{working_dir}/flexpart_src", stdout=file, stderr=file)
     if result.returncode!=0:
-        LOGGER.error(result.stderr)
         return 1
-    # Copy the executable into the working dir
+    # *************************************************************************************************
     bashCommand = ["cp", f"{working_dir}/flexpart_src/FLEXPART", f"{working_dir}/"]
-    result = subprocess.run(bashCommand, capture_output=True)
+    with open(f"{working_dir}/flexpart_compile.out", "a") as file:
+        result = subprocess.run(bashCommand, stdout=file, stderr=file)
     if result.returncode!=0:
-        LOGGER.error(result.stderr)
         return 1
+    # *************************************************************************************************
     return 0
 
 def check_ECMWF_pool(config_xml_filepath: str, working_dir: str) -> int:
@@ -1205,7 +1211,7 @@ if __name__=="__main__":
 
     status = compile_flexpart(wdir)
     if status!=0:
-        LOGGER.error("Something went wrong during compilation...")
+        LOGGER.error(f"Something went wrong during compilation, check log information in the {wdir}/flexpart_compile.out")
         sys.exit(1)
 
     LOGGER.info("Launching FLEXPART")
