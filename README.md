@@ -36,7 +36,7 @@ The outputs of the simulation are : plume estimated trajectories in the binary o
 There are two possible ways to launch the simulation inside the Singularity container:
 - one-line command (run a command within a container, wait for the end of simulation to regain control of the shell)
 ```
-& singularity exec [--bind path1,path2] girafe-image.sif python3 girafe.py --config user-config.xml
+$ singularity exec [--bind path1,path2] girafe-image.sif python3 girafe.py --config user-config.xml
 ```
 - interactive mode (run a shell within a container, then launch the command within the shell of the container)
 ```
