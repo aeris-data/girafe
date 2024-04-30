@@ -26,7 +26,7 @@ Afterwards, the sif image can be placed anywhere (even on another system) indepe
 ## Usage
 The main script is `girafe.py` which needs the input configuration file `user-config.xml` (which can be renamed, the name is not important). The Python script handles the launch combinations, writes input files for the FLEXPART executable and post-process simulation results. The main usage is
 ```
-python3 girafe.py --config user-config.xml
+$ python3 girafe.py --config user-config.xml
 ```
 
 ⚠️ ***The script must be launched inside the Singularity container.***
@@ -66,4 +66,8 @@ $ singularity shell --bind /opt,/data:/mnt my_container.sif
 This will bind `/opt` on the host to `/opt` in the container and `/data` on the host to `/mnt` in the container.
 
 ## Input meteorological data extraction
-The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used.
+The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used. The flex_extract app must be installed on your MARS server (ecs, hpc or other); the detailed installation guide can be found in the GIRAFE manual ```diff - text in red```. An overlay Bash script was created to facilitate the data extraction and simulation launch with flex_extract for the GIRAFE specific study case. This script allows to combine the data extraction performed on the MARS server and the simulation launch on a remote server defined by the user (where the GIRAFE tool itself is installed). The main usage of this overlay script is :
+```
+$ ./girafe-extract-ecmwf.sh --config girafe_extraction.conf
+```
+where the `girafe_extraction.conf` is the configuration file with necessary parameters set by the user. This script will first handle the data extraction using flex_extract based on the simulation parameters set by the user; if the extraction was successful, the script will then transfer the data to a remote server defined by the user; if the parameter `LAUNCH_SIMULATION` in the configuration file was set to `true`, the simulation will then be launched remotely by the overlay script. If `LAUNCH_SIMULATION=false`, no simulation will be performed, only the data extraction will be done. If the remote server information is not provided, the data won't be transferred and could be found in the MARS output directory defined by the user.
