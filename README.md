@@ -76,7 +76,7 @@ where the `girafe_extraction.conf` is the configuration file with necessary para
 The configuration file content has to be as follows:
 ```
 WDIR=/working_directory/on_the_mars_server/corresponding_to_the_current/simulation
-GIRAFE_CONFIG_FILE=/path/to/the/girafe_configuration_xml_file/already_written
+GIRAFE_CONFIG_FILE=/path/to/the/existing_girafe_configuration_xml_file
 FLEX_EXTRACT_ROOT=/path/to/the/flex_extract/on_mars_server
 DATA_OUTPUT_DIR=/root_directory_on_mars_server/for_output_files/
 REMOTE_ADDRESS=my.server.com
