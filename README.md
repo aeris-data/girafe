@@ -72,3 +72,17 @@ The input data for the simulations is meteorological data coming from the ECMWF 
 $ ./girafe-extract-ecmwf.sh --config girafe_extraction.conf
 ```
 where the `girafe_extraction.conf` is the configuration file with necessary parameters set by the user. This script will first handle the data extraction using flex_extract based on the simulation parameters set by the user; if the extraction was successful, the script will then transfer the data to a remote server defined by the user; if the parameter `LAUNCH_SIMULATION` in the configuration file was set to `true`, the simulation will then be launched remotely by the overlay script. If `LAUNCH_SIMULATION=false`, no simulation will be performed, only the data extraction will be done. If the remote server information is not provided, the data won't be transferred and could be found in the MARS output directory defined by the user.
+
+The configuration file content has to be as follows:
+```
+WDIR=/working_directory/on_the_mars_server/corresponding_to_the_current/simulation
+GIRAFE_CONFIG_FILE=/path/to/the/girafe_configuration_xml_file/already_written
+FLEX_EXTRACT_ROOT=/path/to/the/flex_extract/on_mars_server
+DATA_OUTPUT_DIR=/root_directory_on_mars_server/for_output_files/
+REMOTE_ADDRESS=my.server.com
+REMOTE_USER=username
+REMOTE_CONTAINER_PATH=/path_on_the_remote/to/girafe-container.sif
+REMOTE_PYTHON_PATH=/path_on_the_remote/to/girafe.py
+LAUNCH_SIMULATION=true
+```
+The `WDIR` will contain working files for the simulation and data extraction, this directory must preferably be individual for every different simulation. On the contrary, the `DATA_OUTPUT_DIR` is a parent directory for the output flex_extract data, meaning that inside this directory will be created a sub-directory with name `./YYYYMMDD_YYYYMMDD` where the YYYYMMDD dates will correspond to the simulation dates of one's simulation.
