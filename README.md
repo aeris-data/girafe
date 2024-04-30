@@ -66,7 +66,7 @@ $ singularity shell --bind /opt,/data:/mnt my_container.sif
 This will bind `/opt` on the host to `/opt` in the container and `/data` on the host to `/mnt` in the container.
 
 ## Input meteorological data extraction
-The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used. The flex_extract app must be installed on your MARS server (ecs, hpc or other); the detailed installation guide can be found in the GIRAFE manual XXXXXXXXXXXXXXXXXXXX. An overlay Bash script was created to facilitate the data extraction and simulation launch with flex_extract for the GIRAFE specific study case. This script allows to combine the data extraction performed on the MARS server and the simulation launch on a remote server defined by the user (where the GIRAFE tool itself is installed). The main usage of this overlay script is :
+The input data for the simulations is meteorological data coming from the ECMWF database. To extract and prepare the data in the correct format, the `flex_extract` tool should be used. The flex_extract app must be installed on your MARS server (ecs, hpc or other); the detailed installation guide can be found in the GIRAFE manual @@@@@@@@@@@@@@@@@@@@. An overlay Bash script was created to facilitate the data extraction and simulation launch with flex_extract for the GIRAFE specific study case. This script allows to combine the data extraction performed on the MARS server and the simulation launch on a remote server defined by the user (where the GIRAFE tool itself is installed). The main usage of this overlay script is :
 
 ```
 $ ./girafe-extract-ecmwf.sh --config girafe_extraction.conf
