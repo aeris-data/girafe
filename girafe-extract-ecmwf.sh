@@ -532,10 +532,10 @@ function update_config_file(){
 }
 
 function copy_data_to_user_server(){
-    _max_retries=5
+    _max_tries=5
     _attempt=1
     info "Creating remote directory for the extracted data if it does not exist..."
-    while [ ${attempt} -le ${max_retries} ]; do
+    while [ ${_attempt} -le ${_max_tries} ]; do
         _cmd="mkdir -p ${REMOTE_DATA_DIR}"
         ssh -o ServerAliveInterval=10 -o ServerAliveCountMax=5 "${REMOTE_USER}@${REMOTE_ADDRESS}" ${_cmd}
         if [ $? -eq 0 ]; then
@@ -543,7 +543,7 @@ function copy_data_to_user_server(){
             break  # Break out of the loop if SSH command succeeds
         else
             info "SSH connection failed. Retrying..."
-            attempt=$((attempt + 1))
+            _attempt=$((_attempt + 1))
             sleep 60  # Add a delay before retrying
         fi
     done
@@ -598,49 +598,49 @@ function launch_simulation(){
     info "Creating remote working directory if it does not exist..."
     _cmd="mkdir -p ${REMOTE_WORKING_DIR}"
     _attempt=1
-    while [ ${attempt} -le ${max_retries} ]; do
+    while [ ${_attempt} -le ${_max_tries} ]; do
         ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=5 "${REMOTE_USER}@${REMOTE_ADDRESS}" ${_cmd}
         if [ $? -eq 0 ]; then
             info "${REMOTE_USER}@${REMOTE_ADDRESS}:${REMOTE_WORKING_DIR} is ready"
             break  # Break out of the loop if SSH command succeeds
         else
             info "SSH connection failed. Retrying..."
-            attempt=$((attempt + 1))
+            _attempt=$((_attempt + 1))
             sleep 60  # Add a delay before retrying
         fi
     done
 
     info "Copying GIRAFE configuration file to the remote server..."
     _attempt=1
-    while [ ${attempt} -le ${max_retries} ]; do
+    while [ ${_attempt} -le ${_max_tries} ]; do
         scp -o ServerAliveInterval=30 -o ServerAliveCountMax=5 -q "${GIRAFE_CONFIG_FILE}" "${_dst_path}/"
         if [ $? -eq 0 ]; then
             info "${_dst_path}/$(basename ${GIRAFE_CONFIG_FILE}) is ready"
             break  # Break out of the loop if SSH command succeeds
         else
             info "SSH connection failed. Retrying..."
-            attempt=$((attempt + 1))
+            _attempt=$((_attempt + 1))
             sleep 60  # Add a delay before retrying
         fi
     done
 
     info "Copying SLURM job script for simulation to the remote server..."
     _attempt=1
-    while [ ${attempt} -le ${max_retries} ]; do
+    while [ ${_attempt} -le ${_max_tries} ]; do
         scp -o ServerAliveInterval=30 -o ServerAliveCountMax=5 -q "${JOB_FILEPATH}" "${_dst_path}/"
         if [ $? -eq 0 ]; then
             info "${_dst_path}/$(basename ${JOB_FILEPATH}) is ready"
             break  # Break out of the loop if SSH command succeeds
         else
             info "SSH connection failed. Retrying..."
-            attempt=$((attempt + 1))
+            _attempt=$((_attempt + 1))
             sleep 60  # Add a delay before retrying
         fi
     done
 
     _attempt=1
     info "Submitting the simulation script ${REMOTE_WORKING_DIR}/$(basename ${JOB_FILEPATH}) as a job on ${SERVER_ADDRESS}"
-    while [ ${attempt} -le ${max_retries} ]; do
+    while [ ${_attempt} -le ${_max_tries} ]; do
         _cmd="sbatch ${REMOTE_WORKING_DIR}/$(basename ${JOB_FILEPATH})"
         _jobID=$(ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=5 "${REMOTE_USER}@${REMOTE_ADDRESS}" ${_cmd})
         if [ $? -eq 0 ]; then
@@ -649,7 +649,7 @@ function launch_simulation(){
             break  # Break out of the loop if SSH command succeeds
         else
             info "SSH connection failed. Retrying..."
-            attempt=$((attempt + 1))
+            _attempt=$((_attempt + 1))
             sleep 60  # Add a delay before retrying
         fi
     done
@@ -668,7 +668,7 @@ function launch_simulation(){
     while true; do
         _cmd="ssh -o ServerAliveInterval=30 -o ServerAliveCountMax=5 ${REMOTE_USER}@${REMOTE_ADDRESS} sacct -p -j ${_jobID} --noheader -X --format JobName,State"
         _attempt=1
-        while [ ${attempt} -le ${max_retries} ]; do
+        while [ ${_attempt} -le ${_max_tries} ]; do
             _sacct_res=$(${_cmd})
             if [ $? -eq 0 ]; then
                 _job_name=$(echo ${_sacct_res} | cut -d'|' -f1)
@@ -686,7 +686,7 @@ function launch_simulation(){
                 break  # Break out of the loop if SSH command succeeds
             else
                 info "SSH connection failed. Retrying..."
-                attempt=$((attempt + 1))
+                _attempt=$((_attempt + 1))
                 sleep 60  # Add a delay before retrying
             fi
         done
