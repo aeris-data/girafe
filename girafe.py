@@ -801,8 +801,12 @@ def find_lat_lon_variables(dataset: xr.Dataset) -> str:
         if "standard_name" in dataset[var].attrs.keys():
             if dataset[var].attrs["standard_name"]=="latitude":
                 lat_name = var
+            if "latitude" in dataset[var].attrs["standard_name"]:
+                lat_name = var
         if "standard_name" in dataset[var].attrs.keys():
             if dataset[var].attrs["standard_name"]=="longitude":
+                lon_name = var
+            if "longitude" in dataset[var].attrs["standard_name"]:
                 lon_name = var
     return lat_name, lon_name
 
@@ -884,6 +888,8 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
                     sys.exit(1)
 
                 # Get the subset of the data
+                #LOGGER.info(f"lat_varname={lat_varname}")
+                #LOGGER.info(f"lon_varname={lon_varname}")
                 sub_ds = ds.sel(time=pd.to_datetime(rel_start_datetime), method="nearest")
                 sub_ds = sub_ds.sel({lat_varname: slice(rel_lat_min, rel_lat_max), lon_varname: slice(rel_lon_min, rel_lon_max)})
 
