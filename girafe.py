@@ -897,7 +897,7 @@ def write_releases_file_for_inventory(config_xml_filepath: str, working_dir: str
 def write_releases_file(config_xml_filepath: str, working_dir: str) -> int:
     xml               = ET.parse(config_xml_filepath)
     emission_filepath = xml.getroot().find("girafe/paths/emissions").text
-    if ("MCD14DL" in emission_filepath) or ("fire_nrt" in emission_filepath):
+    if ("MCD14DL" in emission_filepath) or ("fire" in emission_filepath):
         return write_releases_file_for_modis(config_xml_filepath, working_dir)
     elif (".nc" in emission_filepath) and ("CAMS" in emission_filepath):
         return write_releases_file_for_inventory(config_xml_filepath, working_dir)
@@ -1156,9 +1156,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Python code that prepare all FLEXPART inputs"
                                     "and launch FLEXPART simulations based on your configuration xml file", 
                                     formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("-gc","--config", type=str, default="./girafe-config.xml",
-                        help="Filepath to your configuration xml file.")
-    parser.add_argument("--shell-log",help="Display log also in the shell",action="store_true")
+    parser.add_argument("-gc","--config", type=str, help="Filepath to your configuration xml file.", required=True)
 
     args = parser.parse_args()
 
