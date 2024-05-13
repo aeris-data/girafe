@@ -748,6 +748,7 @@ function main(){
     get_geographical_extent ${GIRAFE_CONFIG_FILE}
     get_ecmwf_dir ${GIRAFE_CONFIG_FILE}
     DATA_OUTPUT_DIR="${DATA_OUTPUT_DIR}/${START_DATE}_${END_DATE}"
+    mkdir -p ${DATA_OUTPUT_DIR}
 
     info "Simulation is between dates ${START_DATE} ${START_TIME} --> ${END_DATE} ${END_TIME}"
     info "Geographical window is :"
@@ -756,7 +757,7 @@ function main(){
     info "        ${LAT_MIN}"
     info "Grid spatial resolution = ${GRID_RES}"
 
-    # get_data_from_mars
+    get_data_from_mars
     _status=$?
     if [ ${_status} == 0 ]; then
         true
