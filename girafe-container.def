@@ -58,4 +58,14 @@ From: ubuntu:20.04
     cp /usr/local/makefile ./
     make ncf=yes
 
+    cd /usr/local
+    wget https://ftp.cpc.ncep.noaa.gov/wd51we/wgrib2/wgrib2.tgz
+    tar -xzvf wgrib2.tgz
+    cd grib2
+    export CC=gcc
+    export FC=gfortran
+    export COMP_SYS=gnu_linux
+    make
+    make lib
+
     alias ll='ls --color=auto -alF' >> /etc/bash.bashrc
