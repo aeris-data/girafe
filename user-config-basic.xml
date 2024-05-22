@@ -1,7 +1,5 @@
 <config>
     <girafe>
-        <!-- Current GIRAFE version (DO NOT CHANGE)-->
-        <version>7.0</version>
 
         <simulation_start>
             <!-- simulation begin date (YYYYMMDD) -->
@@ -124,5 +122,6 @@
             <!-- <emissions_variable>sum</emissions_variable> -->
             <emissions>/home/damali/Work/SEDOO/GIRAFE_wdir/modis_fire/MODIS_C6_1_Global_MCD14DL_NRT_2023324.txt</emissions>
         </paths>
+        
     </girafe>
 </config>

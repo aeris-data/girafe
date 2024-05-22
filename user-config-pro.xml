@@ -1,7 +1,5 @@
 <config>
     <girafe>
-        <!-- Current GIRAFE version (DO NOT CHANGE)-->
-        <version>7.0</version>
 
         <simulation_start>
             <!-- simulation begin date (YYYYMMDD) -->

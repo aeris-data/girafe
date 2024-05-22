@@ -295,14 +295,6 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
     flexpart_keys = ["LDIRECT","IBDATE","IBTIME","IEDATE","IETIME","LOUTSTEP","LOUTAVER","LOUTSAMPLE","ITSPLIT","LSYNCTIME","CTL",
                      "IFINE","IOUT","IPOUT","LSUBGRID","LCONVECTION","LAGESPECTRA","IPIN","IOUTPUTFOREACHRELEASE","IFLUX","MDOMAINFILL",
                      "IND_SOURCE","IND_RECEPTOR","MQUASILAG","NESTED_OUTPUT","LINIT_COND","SURF_ONLY","CBLFLAG"]
-    # try:
-    #     flexpart_root = xml.find("flexpart/root").text
-    # except:
-    #     LOGGER.error("<flexpart/root> node is missing, check your configuration file!")
-    #     sys.exit(1)
-    # ----------------------------------------------------
-    # MANUAL VERSION
-    # ----------------------------------------------------
     with open(working_dir+"/options/COMMAND","w") as file:
         file.write("***************************************************************************************************************\n")
         file.write("*                                                                                                             *\n")
