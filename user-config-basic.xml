@@ -67,6 +67,7 @@
             </out_grid>
 
             <command>
+                <forward> 1 </forward>
                 <time>
                     <!-- Output every sssss seconds -->
                     <output>3600</output>

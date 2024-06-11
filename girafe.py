@@ -261,10 +261,6 @@ def write_command_file(config_xml_filepath: str, working_dir: str) -> None:
     xml  = ET.parse(config_xml_filepath)
     xml  = xml.getroot().find("girafe")
     xml_keys = ["flexpart/command/forward",
-                # "simulation_date/begin",
-                # "simulation_time/begin",
-                # "simulation_date/end",
-                # "simulation_time/end",
                 "simulation_start/date",
                 "simulation_start/time",
                 "simulation_end/date",
